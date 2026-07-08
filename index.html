@@ -343,11 +343,11 @@ textarea{resize:vertical;min-height:60px}
       </div>
       <div class="field">
         <label>Laboratório <span style="color:var(--red)">*</span></label>
-        <input type="text" id="bk-lab" placeholder="ex: Marcol, Beny, Cris, Spitzer...">
+        <input type="text" id="bk-lab" placeholder="ex: Lab A, Lab B...">
       </div>
       <div class="field">
         <label>Telefone para contato</label>
-        <input type="text" id="bk-phone" placeholder="ex: (11) 98765-4321">
+        <input type="text" id="bk-phone" placeholder="ex: (XX) XXXXX-XXXX">
       </div>
       <div class="field">
         <label>Observações</label>
@@ -533,9 +533,11 @@ function goToday2(){weekStart=getWeekStart(new Date());renderTimeline();}
 const DAYS_PT=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const MONTHS_SHORT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
+// ── Drag-to-select state ──
+let dragState=null; // {startDate, startHour, active}
+
 function renderTimeline(){
   const todayStr=fmtDate(new Date());
-  // Build 7 days from weekStart
   const days=Array.from({length:7},(_,i)=>{
     const d=new Date(weekStart);d.setDate(d.getDate()+i);return d;
   });
@@ -544,7 +546,6 @@ function renderTimeline(){
     `${ws.getDate()} ${MONTHS_SHORT[ws.getMonth()]} – ${we.getDate()} ${MONTHS_SHORT[we.getMonth()]} ${we.getFullYear()}`;
 
   let html='';
-  // Header row
   html+=`<div class="tg-header"><div class="tg-time-col">Hora</div>`;
   days.forEach(d=>{
     const ds=fmtDate(d);
@@ -553,25 +554,128 @@ function renderTimeline(){
   });
   html+='</div>';
 
-  // Hour rows 0-23
+  // For each column (day), build merged booking spans
+  // Map: dayStr -> array of {booking, startH, endH (within this day)}
+  const dayBookings={};
+  days.forEach(d=>{
+    const ds=fmtDate(d);
+    dayBookings[ds]=[];
+    bookings.forEach(b=>{
+      // Find hours this booking covers on this day
+      const hours=[];
+      for(let h=0;h<24;h++){
+        if(coversHour(b,ds,h)) hours.push(h);
+      }
+      if(hours.length>0){
+        dayBookings[ds].push({b, hours, startH:hours[0], endH:hours[hours.length-1]+1});
+      }
+    });
+  });
+
+  // Build grid row by row
   for(let h=0;h<24;h++){
     html+=`<div class="tg-row"><div class="tg-hour-label">${pad(h)}h</div>`;
     days.forEach(d=>{
       const ds=fmtDate(d);
-      // Find bookings that cover this date+hour
-      const bksHere=bookings.filter(b=>coversHour(b,ds,h));
+      const bksAtHour=dayBookings[ds].filter(x=>x.hours.includes(h));
+      const isFirstHour=bksAtHour.filter(x=>x.startH===h);
+      const isCovered=bksAtHour.length>0;
+
       let cellContent='';
-      bksHere.forEach(b=>{
+      // Only render booking label at the FIRST hour of the block
+      isFirstHour.forEach(({b,startH,endH})=>{
+        const span=endH-startH;
         const cls=b.bookingType==='manutencao'?'bk-manut':'bk-exp';
-        const label=b.bookingType==='manutencao'?`🔧 ${b.user.split(' ')[0]}`:`${b.user.split(' ')[0]}${b.lab?` (${b.lab})`:''} `;
-        cellContent+=`<div class="tg-booking ${cls}" onclick="event.stopPropagation();openEdit('${b.id}')" title="${b.user}${b.lab?' · '+b.lab:''} · ${b.readType||''}">${label}</div>`;
+        const label=b.bookingType==='manutencao'
+          ?`🔧 ${b.user.split(' ')[0]}`
+          :`${b.user.split(' ')[0]}${b.lab?` (${b.lab})`:''}`;
+        const heightPx=span*28; // 28px per row
+        cellContent+=`<div class="tg-booking-block ${cls}" 
+          style="height:${heightPx}px;position:absolute;top:0;left:0;right:0;z-index:2;padding:3px 5px;overflow:hidden;border-radius:3px;cursor:pointer;line-height:1.3;font-size:10px"
+          onclick="event.stopPropagation();openEdit('${b.id}')"
+          title="${b.user}${b.lab?' · '+b.lab:''} · ${getDuration(b)}">
+          <strong>${label}</strong>
+          ${span>1?`<br><span style="opacity:.7">${pad(startH)}h–${pad(endH)}h</span>`:''}
+        </div>`;
       });
-      html+=`<div class="tg-cell${bksHere.length?' occupied':''}" onclick="openNew('${ds}',${h})">${cellContent}</div>`;
+
+      // Only show empty cell if not covered, or if covered but not first hour (block handles it)
+      const posRel=isCovered?'position:relative;':'';
+      html+=`<div class="tg-cell${isCovered?' occupied':''}" 
+        style="${posRel}min-height:28px"
+        data-date="${ds}" data-hour="${h}" onmousedown="startDrag('${ds}',${h},event)"
+        onmouseenter="moveDrag('${ds}',${h})"
+        onmouseup="endDrag('${ds}',${h})"
+        onclick="${!isCovered?`openNew('${ds}',${h})`:''}">
+        ${cellContent}
+      </div>`;
     });
     html+='</div>';
   }
   document.getElementById('timeline-grid').innerHTML=html;
+
+  // Prevent text selection during drag
+  document.getElementById('timeline-grid').addEventListener('selectstart',e=>e.preventDefault());
 }
+
+// ── Drag to select multiple hours ──
+function startDrag(ds,h,e){
+  // Only start drag on empty cells
+  const cell=e.currentTarget;
+  if(cell.classList.contains('occupied'))return;
+  dragState={startDate:ds,startHour:h,endHour:h,active:true};
+  highlightDrag();
+}
+
+function moveDrag(ds,h){
+  if(!dragState||!dragState.active)return;
+  // Only drag within same day
+  if(ds!==dragState.startDate)return;
+  dragState.endHour=h;
+  highlightDrag();
+}
+
+function endDrag(ds,h){
+  if(!dragState||!dragState.active)return;
+  dragState.active=false;
+  const startH=Math.min(dragState.startHour,dragState.endHour);
+  const endH=Math.max(dragState.startHour,dragState.endHour)+1;
+  clearDragHighlight();
+  dragState=null;
+  // Open new booking with pre-filled times
+  if(endH-startH>=1){
+    openNew(ds,startH,endH);
+  }
+}
+
+function highlightDrag(){
+  if(!dragState)return;
+  clearDragHighlight();
+  const minH=Math.min(dragState.startHour,dragState.endHour);
+  const maxH=Math.max(dragState.startHour,dragState.endHour);
+  document.querySelectorAll('.tg-cell').forEach(cell=>{
+    const ds=cell.dataset.date;
+    const h=parseInt(cell.dataset.hour);
+    if(ds===dragState.startDate&&h>=minH&&h<=maxH){
+      cell.style.background='rgba(108,63,197,.2)';
+    }
+  });
+}
+
+function clearDragHighlight(){
+  document.querySelectorAll('.tg-cell').forEach(cell=>{
+    cell.style.background='';
+  });
+}
+
+// Global mouseup to cancel drag if released outside grid
+document.addEventListener('mouseup',()=>{
+  if(dragState&&dragState.active){
+    dragState.active=false;
+    clearDragHighlight();
+    dragState=null;
+  }
+});
 
 function coversHour(b,dateStr,hour){
   // A booking covers a date+hour if:
@@ -585,7 +689,7 @@ function coversHour(b,dateStr,hour){
 // ═══════════════════════════════════
 // BOOKING MODAL
 // ═══════════════════════════════════
-function openNew(date,hour){
+function openNew(date,hour,endHour){
   editingId=null;bookingType='experimento';
   document.getElementById('modal-title').textContent='Nova reserva';
   document.getElementById('del-btn').style.display='none';
@@ -600,7 +704,8 @@ function openNew(date,hour){
   document.getElementById('bk-start-date').value=d;
   document.getElementById('bk-end-date').value=d;
   document.getElementById('bk-start-hour').value=hour!=null?hour:8;
-  document.getElementById('bk-end-hour').value=hour!=null?(hour+1)%24:12;
+  // If dragged, use endHour; if clicked single cell, use hour+1
+  document.getElementById('bk-end-hour').value=endHour!=null?endHour:(hour!=null?(hour+1)%24:12);
   setType('experimento');
   populateUserSelect();
   updateDurationLabel();
