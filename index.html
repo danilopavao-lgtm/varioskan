@@ -413,7 +413,6 @@ window.onload=async function(){
   try{
     if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.firestore();auth=firebase.auth();
-    await db.collection('users').limit(1).get();
     auth.onAuthStateChanged(async u=>{
       hide('loading-screen');
       if(u){firebaseUser=u;await loadOrCreateProfile(u);startApp();}
