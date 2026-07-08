@@ -77,6 +77,7 @@ textarea{resize:vertical;min-height:60px}
 .tg-booking{font-size:10px;padding:2px 4px;border-radius:3px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .bk-exp{background:var(--purple-light);color:var(--purple-dark)}
 .bk-manut{background:var(--amber-light);color:var(--amber)}
+.bk-pending{background:var(--red-light);color:var(--red);border:1px dashed var(--red)}
 
 /* Nav week */
 .week-nav{display:flex;align-items:center;gap:10px;margin-bottom:14px}
@@ -186,7 +187,7 @@ textarea{resize:vertical;min-height:60px}
     <div class="nav-tab active" data-tab="timeline" onclick="switchTab(this)">📅 Agenda</div>
     <div class="nav-tab" data-tab="reservas" onclick="switchTab(this)">📋 Reservas</div>
     <div class="nav-tab" data-tab="status" onclick="switchTab(this)">📊 Status</div>
-    <div class="nav-tab" id="admin-tab" data-tab="admin" onclick="switchTab(this)" style="display:none">⚙️ Admin</div>
+    <div class="nav-tab" id="admin-tab" data-tab="admin" onclick="switchTab(this)" style="display:none">⚙️ Admin <span id="pending-badge" style="display:none;background:var(--red);color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px">!</span></div>
   </div>
 
   <div class="main">
@@ -245,6 +246,21 @@ textarea{resize:vertical;min-height:60px}
           <span style="font-size:11px;color:var(--text2)">Cadastro automático via Google</span>
         </div>
         <div id="admin-user-list"></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <strong style="font-size:14px">⏳ Reservas pendentes</strong>
+          <span style="font-size:11px;color:var(--text2)" id="pending-count"></span>
+        </div>
+        <div id="admin-pending-list"><p style="font-size:13px;color:var(--text2)">Nenhuma reserva pendente.</p></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <strong style="font-size:14px">📊 Limite de horas por usuário</strong>
+          <span style="font-size:11px;color:var(--text2)">${{new Date().toLocaleString('pt-BR',{month:'long',year:'numeric'})}}</span>
+        </div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Limite padrão: ${DEFAULT_LIMIT}h/mês. Clique em "Ajustar" para definir limite individual.</p>
+        <div id="admin-limits-list"></div>
       </div>
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -405,6 +421,8 @@ let usage={uses:0,limit:200,lastReset:null,lastResetBy:null};
 let weekStart=getWeekStart(new Date());
 let editingId=null,bookingType='experimento';
 let activeFP='';
+let userLimits={}; // {uid: {limit, months: {'YYYY-MM': hours}}}
+const DEFAULT_LIMIT=40; // horas por mês
 
 // ═══════════════════════════════════
 // INIT
@@ -466,7 +484,7 @@ function startApp(){
   document.getElementById('top-avatar').className='avatar'+(currentUser.isAdmin?' admin':'');
   document.getElementById('top-name').textContent=currentUser.name+(currentUser.lab?` (${currentUser.lab})`:'');
   if(currentUser.isAdmin)document.getElementById('admin-tab').style.display='block';
-  listenBookings();listenUsers();listenUsage();
+  listenBookings();listenUsers();listenUsage();listenUserLimits();
   renderTimeline();populateFilters();
   // Pre-fill hour selects
   const hs=Array.from({length:24},(_,i)=>`<option value="${i}">${pad(i)}:00</option>`).join('');
@@ -485,7 +503,14 @@ function listenBookings(){
     renderTimeline();
     if(document.getElementById('panel-reservas').classList.contains('active'))renderReservas();
     if(document.getElementById('panel-status').classList.contains('active'))renderStatus();
-    if(document.getElementById('panel-admin').classList.contains('active'))renderAdminBk();
+    if(document.getElementById('panel-admin').classList.contains('active'))renderAdmin();
+    // Update pending badge
+    const pending=bookings.filter(b=>b.pending).length;
+    const badge=document.getElementById('pending-badge');
+    if(badge&&currentUser?.isAdmin){
+      badge.style.display=pending>0?'inline':'none';
+      badge.textContent=pending;
+    }
   },err=>console.error(err));
 }
 function listenUsers(){
@@ -501,6 +526,63 @@ function listenUsage(){
     if(document.getElementById('panel-status').classList.contains('active'))renderUsage();
     if(document.getElementById('panel-admin').classList.contains('active'))renderAdminUsage();
   },err=>console.error(err));
+}
+
+// ═══════════════════════════════════
+// USER LIMITS
+// ═══════════════════════════════════
+function listenUserLimits(){
+  db.collection('userLimits').onSnapshot(snap=>{
+    userLimits={};
+    snap.docs.forEach(d=>{ userLimits[d.id]={...d.data()}; });
+    if(document.getElementById('panel-admin').classList.contains('active'))renderAdminLimits();
+  },err=>console.error('userLimits error:',err));
+}
+
+function currentMonth(){
+  const n=new Date();
+  return `${n.getFullYear()}-${pad(n.getMonth()+1)}`;
+}
+
+function getUserHoursThisMonth(uid){
+  const ul=userLimits[uid];
+  if(!ul||!ul.months)return 0;
+  return ul.months[currentMonth()]||0;
+}
+
+function getUserLimit(uid){
+  return userLimits[uid]?.limit||DEFAULT_LIMIT;
+}
+
+async function addHoursToUser(uid,hours){
+  const month=currentMonth();
+  const ref=db.collection('userLimits').doc(uid);
+  const snap=await ref.get();
+  if(snap.exists){
+    const cur=snap.data().months?.[month]||0;
+    await ref.update({[`months.${month}`]: cur+hours});
+  } else {
+    await ref.set({limit:DEFAULT_LIMIT, months:{[month]:hours}});
+  }
+}
+
+async function setUserLimit(uid,name){
+  const cur=getUserLimit(uid);
+  const val=prompt(`Limite mensal de horas para ${name} (atual: ${cur}h):`,cur);
+  if(!val||isNaN(parseInt(val)))return;
+  const ref=db.collection('userLimits').doc(uid);
+  const snap=await ref.get();
+  if(snap.exists) await ref.update({limit:parseInt(val)});
+  else await ref.set({limit:parseInt(val),months:{}});
+}
+
+async function approvePending(id){
+  await db.collection('bookings').doc(id).update({pending:false,approvedBy:currentUser.name,approvedAt:new Date().toISOString()});
+}
+
+async function rejectPending(id,user){
+  if(!confirm(`Recusar reserva de ${user}?`))return;
+  await db.collection('bookings').doc(id).delete();
 }
 
 // ═══════════════════════════════════
@@ -585,10 +667,10 @@ function renderTimeline(){
       // Only render booking label at the FIRST hour of the block
       isFirstHour.forEach(({b,startH,endH})=>{
         const span=endH-startH;
-        const cls=b.bookingType==='manutencao'?'bk-manut':'bk-exp';
+        const cls=b.pending?'bk-pending':b.bookingType==='manutencao'?'bk-manut':'bk-exp';
         const label=b.bookingType==='manutencao'
           ?`🔧 ${b.user.split(' ')[0]}`
-          :`${b.user.split(' ')[0]}${b.lab?` (${b.lab})`:''}`;
+          :`${b.pending?'⏳ ':''}${b.user.split(' ')[0]}${b.lab?` (${b.lab})`:''}`;
         const heightPx=span*28; // 28px per row
         cellContent+=`<div class="tg-booking-block ${cls}" 
           style="height:${heightPx}px;position:absolute;top:0;left:0;right:0;z-index:2;padding:3px 5px;overflow:hidden;border-radius:3px;cursor:pointer;line-height:1.3;font-size:10px"
@@ -818,16 +900,49 @@ async function saveBooking(){
   const conflict=checkConflict(sd,sh,ed,eh,editingId);
   if(conflict){showConflict(conflict);return;}
 
+  // Check user hour limit for new bookings
+  let isPending=false;
+  if(!editingId&&bookingType==='experimento'){
+    const bUser=users.find(u=>u.name===user);
+    if(bUser){
+      const newStart=new Date(sd+'T'+pad(sh)+':00');
+      const newEnd=new Date(ed+'T'+pad(eh)+':00');
+      const newHours=(newEnd-newStart)/3600000;
+      const usedHours=getUserHoursThisMonth(bUser.id);
+      const limitHours=getUserLimit(bUser.id);
+      if(usedHours+newHours>limitHours){
+        const remaining=Math.max(0,limitHours-usedHours).toFixed(1);
+        if(!confirm(`⚠️ Limite mensal: ${usedHours.toFixed(1)}h usadas de ${limitHours}h.
+Esta reserva usa mais ${newHours.toFixed(1)}h (restam ${remaining}h).
+
+A reserva será salva como PENDENTE e precisará de aprovação do admin.
+
+Deseja continuar?`)){return;}
+        isPending=true;
+      }
+    }
+  }
+
   const btn=document.getElementById('save-btn');
   btn.textContent='Salvando...';btn.disabled=true;
   try{
-    const data={startDate:sd,startHour:sh,endDate:ed,endHour:eh,bookingType,user,lab,phone:phone||null,protein:protein||null,readType:readType||null,plate:plate||null,notes:notes||null,updatedAt:new Date().toISOString()};
+    const data={startDate:sd,startHour:sh,endDate:ed,endHour:eh,bookingType,user,lab,phone:phone||null,protein:protein||null,readType:readType||null,plate:plate||null,notes:notes||null,pending:isPending,updatedAt:new Date().toISOString()};
     if(editingId){
       await db.collection('bookings').doc(editingId).update(data);
     }else{
       data.createdAt=new Date().toISOString();
       await db.collection('bookings').add(data);
-      if(bookingType==='experimento')await incrementUsage();
+      if(bookingType==='experimento'){
+        await incrementUsage();
+        // Add hours to user counter
+        const bUser=users.find(u=>u.name===user);
+        if(bUser){
+          const newStart=new Date(sd+'T'+pad(sh)+':00');
+          const newEnd=new Date(ed+'T'+pad(eh)+':00');
+          const newHours=(newEnd-newStart)/3600000;
+          await addHoursToUser(bUser.id,newHours);
+        }
+      }
     }
     closeModal();
   }catch(err){showConflict('Erro: '+err.message);}
@@ -976,7 +1091,62 @@ async function setUsageLimit(){
 // ═══════════════════════════════════
 // ADMIN
 // ═══════════════════════════════════
-function renderAdmin(){renderAdminUsers();renderAdminUsage();renderAdminBk();}
+function renderAdmin(){
+  renderAdminUsers();
+  renderAdminPending();
+  renderAdminLimits();
+  renderAdminUsage();
+  renderAdminBk();
+}
+
+function renderAdminPending(){
+  const el=document.getElementById('admin-pending-list');
+  const pc=document.getElementById('pending-count');
+  const pending=bookings.filter(b=>b.pending);
+  if(pc) pc.textContent=pending.length?`${pending.length} aguardando`:'';
+  if(!pending.length){
+    el.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhuma reserva pendente.</p>';
+    return;
+  }
+  el.innerHTML=pending.map(b=>`
+    <div style="background:var(--red-light);border:.5px solid var(--red);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600">⏳ ${b.user}${b.lab?' ('+b.lab+')':''}</span>
+        <span style="font-size:11px;color:var(--text2);margin-left:auto">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h → ${fmtBR(b.endDate)} ${pad(b.endHour||0)}h · ${getDuration(b)}</span>
+      </div>
+      ${b.readType?`<div style="font-size:11px;color:var(--text2);margin-bottom:6px">${b.readType}${b.plate?' · '+b.plate:''}</div>`:''}
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-primary" onclick="approvePending('${b.id}')">✓ Aprovar</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectPending('${b.id}','${b.user}')">✕ Recusar</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderAdminLimits(){
+  const el=document.getElementById('admin-limits-list');
+  if(!el)return;
+  const month=currentMonth();
+  const sorted=[...users].sort((a,b)=>a.name.localeCompare(b.name,'pt'));
+  if(!sorted.length){el.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhum usuário.</p>';return;}
+  el.innerHTML=sorted.map(u=>{
+    const used=getUserHoursThisMonth(u.id);
+    const limit=getUserLimit(u.id);
+    const pct=Math.min(100,Math.round((used/limit)*100));
+    const status=used>=limit?'danger':used>=(limit*0.8)?'warn':'ok';
+    const bc=status==='danger'?'var(--red)':status==='warn'?'var(--amber)':'var(--purple)';
+    return`<div style="padding:8px 0;border-bottom:.5px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:500;flex:1">${u.name}${u.lab?' <span style="font-size:11px;color:var(--text2)">('+u.lab+')</span>':''}</span>
+        <span style="font-size:12px;color:${bc};font-weight:600">${used.toFixed(1)}h / ${limit}h</span>
+        <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="setUserLimit('${u.id}','${u.name}')">⚙ Ajustar</button>
+      </div>
+      <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${bc};border-radius:3px;transition:width .3s"></div>
+      </div>
+      ${status==='danger'?`<div style="font-size:11px;color:var(--red);margin-top:3px">⚠ Limite atingido este mês</div>`:''}
+    </div>`;
+  }).join('');
+}
 
 function renderAdminUsers(){
   const el=document.getElementById('admin-user-list');
