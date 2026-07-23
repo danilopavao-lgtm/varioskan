@@ -3,591 +3,1131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Varioskan Lux — Reservas</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%236C3FC5'/><text y='72' x='50' text-anchor='middle' font-family='system-ui' font-weight='800' font-size='52' fill='white'>VL</text></svg>">
+<title>LBEA Reservas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23378ADD'/><text y='72' x='50' text-anchor='middle' font-family='system-ui' font-weight='800' font-size='52' fill='white'>LB</text></svg>">
+
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
 <style>
-:root{
-  --purple:#6C3FC5;--purple-dark:#4B2A8C;--purple-light:#EDE8F9;
-  --teal:#0E9E8E;--teal-light:#E0F5F3;
-  --amber:#BA7517;--amber-light:#FAEEDA;
-  --red:#E24B4A;--red-light:#FCEBEB;
-  --green:#639922;--green-light:#EAF3DE;
-  --bg:#fff;--bg2:#f7f7f5;--bg3:#f0efe9;
-  --border:rgba(0,0,0,.10);--border2:rgba(0,0,0,.18);
-  --text:#1a1a18;--text2:#5a5a56;--text3:#9a9a94;
-  --radius:10px;--radius-sm:6px;
-  --font:'Inter',system-ui,sans-serif;
+:root {
+  --blue: #378ADD;
+  --blue-dark: #185FA5;
+  --blue-light: #E6F1FB;
+  --green: #639922;
+  --green-light: #EAF3DE;
+  --green-dark: #3B6D11;
+  --amber: #BA7517;
+  --amber-light: #FAEEDA;
+  --red: #E24B4A;
+  --red-light: #FCEBEB;
+  --gray: #5F5E5A;
+  --gray-light: #F1EFE8;
+  --bg: #ffffff;
+  --bg2: #f7f7f5;
+  --bg3: #f0efe9;
+  --border: rgba(0,0,0,0.10);
+  --border2: rgba(0,0,0,0.18);
+  --text: #1a1a18;
+  --text2: #5a5a56;
+  --text3: #9a9a94;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
 }
-@media(prefers-color-scheme:dark){:root{
-  --bg:#232320;--bg2:#2d2d2a;--bg3:#181816;
-  --border:rgba(255,255,255,.12);--border2:rgba(255,255,255,.22);
-  --text:#f0efe9;--text2:#c0bfb8;--text3:#787870;
-  --purple-light:#2a1f4a;--amber-light:#3a2406;--red-light:#3a0c0c;
-}}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #232320; --bg2: #2d2d2a; --bg3: #181816;
+    --border: rgba(255,255,255,0.12); --border2: rgba(255,255,255,0.22);
+    --text: #f0efe9; --text2: #c0bfb8; --text3: #787870;
+    --blue-light: #0e3358; --green-light: #1c3a0c; --amber-light: #3a2406; --red-light: #3a0c0c;
+    --blue-dark: #7ab8f5; --green-dark: #8ecc3e; --amber: #e09a30; --red: #f07070;
+    --green: #8ecc3e;
+  }
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg3);min-height:100vh}
-@keyframes spin{to{transform:rotate(360deg)}}
+a{color:var(--blue);text-decoration:none}
 
 /* Layout */
-.topbar{background:var(--bg);border-bottom:.5px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
-.logo-box{width:30px;height:30px;border-radius:8px;background:var(--purple);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;flex-shrink:0}
-.topbar-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
-.topbar-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border:.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:13px;background:var(--bg2)}
-.avatar{width:24px;height:24px;border-radius:50%;background:var(--purple-light);color:var(--purple-dark);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.avatar.admin{background:var(--amber-light);color:var(--amber)}
-.nav-tabs{background:var(--bg);border-bottom:.5px solid var(--border);display:flex;padding:0 20px;overflow-x:auto;scrollbar-width:none}
+.app-shell{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.topbar-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;letter-spacing:-0.5px}
+.topbar-logo svg{width:22px;height:22px}
+.topbar-spacer{flex:1}
+.topbar-user{display:flex;align-items:center;gap:8px;padding:5px 10px;border:0.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:13px;background:var(--bg2)}
+.avatar{width:24px;height:24px;border-radius:50%;background:var(--blue-light);color:var(--blue-dark);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.avatar.admin{background:#FAEEDA;color:#854F0B}
+
+.nav-tabs{background:var(--bg);border-bottom:0.5px solid var(--border);display:flex;padding:0 20px;overflow-x:auto;scrollbar-width:none}
 .nav-tabs::-webkit-scrollbar{display:none}
-.nav-tab{padding:12px 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);white-space:nowrap;transition:color .15s}
-.nav-tab.active{color:var(--purple);border-bottom-color:var(--purple);font-weight:500}
-.main{padding:20px;max-width:1100px;margin:0 auto;width:100%}
+.nav-tab{padding:12px 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);white-space:nowrap;display:flex;align-items:center;gap:5px;transition:color 0.15s}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--text);border-bottom-color:var(--blue);font-weight:500}
+.nav-tab svg{width:15px;height:15px;opacity:.7}
+
+.main{padding:20px;max-width:960px;margin:0 auto;width:100%}
 .panel{display:none}.panel.active{display:block}
 
-/* Cards / Buttons / Forms */
-.card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:.5px solid var(--border2);background:var(--bg);color:var(--text);transition:background .1s}
-.btn:hover{background:var(--bg2)}.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-primary{background:var(--purple);color:#fff;border-color:var(--purple-dark)}.btn-primary:hover{background:var(--purple-dark)}
+/* Cards & surfaces */
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px}
+.card-sm{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg);color:var(--text);transition:background .1s}
+.btn:hover{background:var(--bg2)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue-dark)}
+.btn-primary:hover{background:var(--blue-dark)}
 .btn-danger{background:var(--red-light);color:var(--red);border-color:var(--red)}
+.btn-danger:hover{opacity:.85}
 .btn-sm{padding:5px 10px;font-size:12px}
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
-.field label{font-size:12px;font-weight:600;color:var(--text)}
-input,select,textarea{width:100%;padding:8px 10px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);color:var(--text);font-size:13px;font-family:var(--font);-webkit-text-fill-color:var(--text)}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--purple)}
-input[readonly]{background:var(--bg3);-webkit-text-fill-color:var(--text2);cursor:default}
-select option{background:var(--bg2);color:var(--text)}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center}
+.btn svg{width:14px;height:14px}
+
+/* Forms */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;font-weight:600;color:var(--text);letter-spacing:.2px}
+input[type=text],input[type=password],input[type=time],input[type=date],select,textarea{
+  width:100%;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);
+  background:var(--bg2);color:var(--text);font-size:13px;font-family:var(--font);
+  transition:border-color .15s;-webkit-text-fill-color:var(--text);
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);background:var(--bg)}
 textarea{resize:vertical;min-height:60px}
+input[readonly]{background:var(--bg3);-webkit-text-fill-color:var(--text2)}
+select option{background:var(--bg2);color:var(--text)}
 
-/* Timeline grid */
-.timeline-wrap{overflow-x:auto;margin-bottom:16px}
-.timeline-grid{display:grid;border:.5px solid var(--border);border-radius:var(--radius);overflow:hidden;min-width:700px}
-.tg-header{background:var(--bg2);border-bottom:.5px solid var(--border);display:flex;align-items:center}
-.tg-time-col{width:72px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text2);padding:6px 8px;text-align:right}
-.tg-day-header{flex:1;text-align:center;padding:6px 4px;font-size:11px;font-weight:600;color:var(--text2);border-left:.5px solid var(--border);cursor:pointer;transition:background .1s}
-.tg-day-header:hover{background:var(--purple-light);color:var(--purple-dark)}
-.tg-day-header.today-col{background:var(--purple-light);color:var(--purple-dark)}
-.tg-row{display:flex;align-items:stretch;border-top:.5px solid var(--border);min-height:28px}
-.tg-row:hover{background:rgba(108,63,197,.03)}
-.tg-hour-label{width:72px;flex-shrink:0;font-size:11px;color:var(--text3);padding:4px 8px;text-align:right;display:flex;align-items:center;justify-content:flex-end;border-right:.5px solid var(--border)}
-.tg-cell{flex:1;border-left:.5px solid var(--border);cursor:pointer;transition:background .1s;position:relative;min-height:28px;padding:2px 3px}
-.tg-cell:hover{background:rgba(108,63,197,.06)}
-.tg-cell.occupied{cursor:pointer}
-.tg-booking{font-size:10px;padding:2px 4px;border-radius:3px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.bk-exp{background:var(--purple-light);color:var(--purple-dark)}
-.bk-manut{background:var(--amber-light);color:var(--amber)}
-.bk-pending{background:var(--red-light);color:var(--red);border:1px dashed var(--red)}
-
-/* Nav week */
-.week-nav{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.week-nav h2{font-size:14px;font-weight:600;flex:1}
-
-/* Reservas list */
-.reserva-item{background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:background .1s;margin-bottom:6px}
-.reserva-item:hover{background:var(--bg2)}
-.ri-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
-.ri-info{font-size:12px;color:var(--text2)}
+/* Chips / badges */
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
-.badge-exp{background:var(--purple-light);color:var(--purple-dark)}
-.badge-manut{background:var(--amber-light);color:var(--amber)}
+.badge-akta{background:var(--blue-light);color:var(--blue-dark)}
+.badge-col{background:var(--green-light);color:var(--green-dark)}
+.badge-itc{background:var(--amber-light);color:var(--amber)}
+.badge-other{background:var(--gray-light);color:var(--gray)}
+.badge-admin{background:var(--amber-light);color:var(--amber)}
 
-/* Usage bar */
-.usage-wrap{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
-.usage-bar-track{height:12px;background:var(--bg3);border-radius:6px;overflow:hidden;margin:8px 0}
-.usage-bar-fill{height:100%;border-radius:6px;transition:width .5s}
+/* Period selector */
+.period-grid{display:flex;flex-wrap:wrap;gap:6px}
+.period-pill{padding:5px 12px;border:0.5px solid var(--border2);border-radius:20px;cursor:pointer;font-size:12px;background:var(--bg2);color:var(--text);transition:all .15s}
+.period-pill:hover{border-color:var(--blue);color:var(--blue)}
+.period-pill.sel{background:var(--blue);color:#fff;border-color:var(--blue-dark)}
+
+/* Calendar */
+.cal-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.cal-header h2{font-size:15px;font-weight:600;flex:1}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cal-head{background:var(--bg2);text-align:center;padding:7px 4px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.cal-cell{background:var(--bg);height:80px;min-height:80px;max-height:80px;padding:5px 4px;cursor:pointer;position:relative;overflow:hidden;box-sizing:border-box}
+.cal-cell:hover{background:var(--bg2)}
+.cal-cell:hover .ev{opacity:.85}
+.cal-cell.dim{background:var(--bg3)}
+.cal-cell.dim .day-n{color:var(--text3)}
+.day-n{font-size:12px;font-weight:600;width:20px;height:20px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;flex-shrink:0}
+.cal-cell.today .day-n{background:var(--blue);color:#fff;border-radius:50%}
+.ev{font-size:10px;padding:1px 4px;border-radius:3px;margin-bottom:1px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
+.ev-akta{background:var(--blue-light);color:var(--blue-dark)}
+.ev-col{background:var(--green-light);color:var(--green-dark)}
+.ev-itc{background:var(--amber-light);color:var(--amber)}
+.ev-other{background:var(--gray-light);color:var(--gray)}
+.ev-manut{background:var(--amber-light);color:var(--amber)}
+.ev-more{font-size:10px;color:var(--text3);white-space:nowrap}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:var(--bg);border-radius:var(--radius);border:0.5px solid var(--border2);width:100%;max-width:480px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.28)}
+.modal-head{padding:16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg)}
+.modal-head h3{color:var(--text)}
+.modal-head h3{flex:1;font-size:15px;font-weight:600}
+.modal-body{padding:16px;display:flex;flex-direction:column;gap:14px}
+.modal-foot{padding:12px 16px;border-top:0.5px solid var(--border);display:flex;gap:8px;align-items:center}
+.modal-foot .spacer{flex:1}
 
 /* Alerts */
-.alert{padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;line-height:1.5;margin-bottom:8px}
-.alert-danger{background:var(--red-light);color:var(--red);border:.5px solid var(--red)}
-.alert-warn{background:var(--amber-light);color:var(--amber);border:.5px solid var(--amber)}
-.alert-info{background:var(--purple-light);color:var(--purple-dark);border:.5px solid var(--purple)}
+.alert{padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;display:flex;gap:6px;align-items:flex-start}
+.alert-danger{background:var(--red-light);color:var(--red);border:0.5px solid var(--red)}
+.alert-info{background:var(--blue-light);color:var(--blue-dark);border:0.5px solid var(--blue)}
+.alert-success{background:var(--green-light);color:var(--green-dark);border:0.5px solid var(--green)}
 
-/* Overlay / Modal */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
-.modal{background:var(--bg);border-radius:var(--radius);border:.5px solid var(--border2);width:100%;max-width:500px;max-height:92vh;overflow-y:auto;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.28)}
-.modal-head{padding:16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg)}
-.modal-head h3{flex:1;font-size:15px;font-weight:600}
-.modal-body{padding:16px;display:flex;flex-direction:column;gap:10px}
-.modal-foot{padding:12px 16px;border-top:.5px solid var(--border);display:flex;gap:8px;align-items:center}
-.modal-foot .sp{flex:1}
+/* Combo box */
+.combo-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px}
+.combo-box p{font-size:12px;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:5px;font-weight:500}
 
-/* Login */
-.login-screen{max-width:380px;margin:60px auto;padding:24px;background:var(--bg);border:.5px solid var(--border2);border-radius:var(--radius);box-shadow:0 4px 24px rgba(0,0,0,.18)}
+/* Reservas list */
+.reserva-item{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:background .1s}
+.reserva-item:hover{background:var(--bg2)}
+.reserva-item+.reserva-item{margin-top:6px}
+.ri-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.ri-date{font-size:12px;color:var(--text2);margin-left:auto}
+.ri-info{font-size:12px;color:var(--text2)}
 
-/* Tipo toggle */
-.type-toggle{display:flex;gap:6px}
-.type-btn{flex:1;padding:8px;border:.5px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:500;text-align:center;background:var(--bg2);color:var(--text)}
-.type-btn.sel-exp{background:var(--purple-light);color:var(--purple-dark);border-color:var(--purple)}
-.type-btn.sel-manut{background:var(--amber-light);color:var(--amber);border-color:var(--amber)}
+/* Equipamentos grid */
+.eq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
+.eq-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;gap:6px}
+.eq-name{font-size:13px;font-weight:600;line-height:1.3}
+.eq-avail{font-size:11px;color:var(--green-dark);font-weight:500}
+.eq-busy{font-size:11px;color:var(--red);font-weight:500}
 
-/* User row */
-.user-row{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border:.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;flex-wrap:wrap}
+/* Admin */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-head h3{font-size:14px;font-weight:600}
+.user-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px}
 .user-row .uname{flex:1;font-size:13px}
 .admin-tag{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--amber-light);color:var(--amber);font-weight:500}
 
-/* Info box */
-.info-box{background:var(--purple-light);border:.5px solid var(--purple);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--purple-dark);line-height:1.6;margin-bottom:12px}
-.warn-box{background:var(--amber-light);border:.5px solid var(--amber);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--amber);line-height:1.6;margin-bottom:12px}
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:48px;gap:10px;color:var(--text2);font-size:13px}
+.spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
+/* Empty */
+.empty{text-align:center;padding:48px 20px;color:var(--text2)}
+.empty svg{width:36px;height:36px;margin-bottom:10px;opacity:.4}
+
+/* Firebase setup screen */
+.setup-screen{max-width:560px;margin:40px auto;padding:0 20px}
+.setup-screen h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.setup-screen p{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+.setup-screen .step{display:flex;gap:12px;margin-bottom:16px}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-content{flex:1}
+.step-content strong{font-size:13px;font-weight:600;display:block;margin-bottom:3px}
+.step-content p{margin:0;font-size:12px;color:var(--text2)}
+.code-block{font-family:monospace;font-size:12px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;margin:8px 0;white-space:pre-wrap;word-break:break-all}
+.setup-form{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+
+/* Responsive — mobile first */
 @media(max-width:640px){
   .main{padding:10px}
   .topbar{padding:0 12px;height:48px}
+  .topbar-logo span{font-size:13px}
+  .topbar-user span:last-of-type{display:none} /* hide chevron on mobile */
+  .nav-tabs{padding:0 8px}
+  .nav-tab{padding:10px 10px;font-size:12px;gap:3px}
+  .nav-tab svg{display:none}
+  /* Calendar — fixed height on mobile too */
+  .cal-cell{height:60px;min-height:60px;max-height:60px;padding:3px}
+  .day-n{font-size:11px;width:18px;height:18px}
+  .ev{font-size:9px;padding:1px 3px}
+  .cal-head{font-size:10px;padding:5px 2px}
+  /* Modal full screen on mobile */
   .overlay{padding:0;align-items:flex-end}
   .modal{max-width:100%;border-radius:var(--radius) var(--radius) 0 0;max-height:92vh}
+  .day-popup{padding:0;align-items:flex-end}
+  .day-popup-box{max-width:100%;border-radius:var(--radius) var(--radius) 0 0;max-height:88vh}
+  .eq-detail{padding:0;align-items:flex-end}
+  .eq-detail-box{max-width:100%;border-radius:var(--radius) var(--radius) 0 0;max-height:88vh}
+  /* Login */
+  .login-screen{margin:20px auto;max-width:100%;border-radius:0;border-left:none;border-right:none;box-shadow:none}
+  /* Forms */
+  .shaker-grid{grid-template-columns:1fr}
+  .period-grid{gap:4px}
+  .period-pill{padding:7px 10px;font-size:12px}
+  .type-toggle{flex-direction:column;gap:6px}
+  .type-btn{padding:10px}
+  /* Filters */
+  .filter-period{gap:3px}
+  .filter-period-btn{padding:5px 8px;font-size:11px}
+  /* Eq grid */
+  .eq-grid{grid-template-columns:repeat(2,1fr)}
+  /* Cal header */
+  .cal-header{gap:6px}
+  .cal-header h2{font-size:14px}
+  /* Buttons */
+  .btn-sm{padding:6px 10px}
+  /* Cards */
+  .card{padding:12px}
+  /* Admin */
+  .metric-row{grid-template-columns:repeat(2,1fr)}
+  .user-row{flex-wrap:wrap;gap:6px}
 }
+@media(max-width:380px){
+  .nav-tab{padding:10px 8px;font-size:11px}
+  .cal-cell{height:50px;min-height:50px;max-height:50px}
+  .ev{font-size:8px;padding:1px 2px}
+  .ev-more{font-size:8px}
+}
+
+/* Login screen */
+.login-screen{max-width:380px;margin:60px auto;padding:24px;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius);box-shadow:0 4px 24px rgba(0,0,0,0.18)}
+.login-screen .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;margin-bottom:24px;color:var(--blue)}
+.login-screen h2{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.login-screen p{font-size:13px;color:var(--text2);margin-bottom:20px}
+.user-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;text-align:left;margin-bottom:6px;transition:background .1s;color:var(--text)}
+.user-btn:hover{background:var(--bg3);border-color:var(--blue)}
+.user-btn .uname{flex:1;font-weight:500;color:var(--text)}
+.divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--text3);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:0.5px;background:var(--border2)}
+
+/* Day popup */
+.day-popup{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:150;padding:16px}
+.day-popup-box{background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius);width:100%;max-width:420px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.28)}
+.day-popup-head{padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--bg)}
+.day-popup-head h3{flex:1;font-size:14px;font-weight:600}
+.day-popup-body{padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.day-popup-empty{text-align:center;padding:24px;color:var(--text2);font-size:13px}
+.day-bk-item{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;cursor:pointer;transition:border-color .1s}
+.day-bk-item:hover{border-color:var(--blue)}
+.day-bk-top{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.day-bk-info{font-size:12px;color:var(--text2)}
+.day-popup-foot{padding:12px 16px;border-top:0.5px solid var(--border);display:flex;gap:8px}
+
+/* Eq detail modal */
+.eq-detail{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:150;padding:16px}
+.eq-detail-box{background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius);width:100%;max-width:440px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.28)}
+.eq-detail-head{padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--bg)}
+.eq-detail-head h3{flex:1;font-size:14px;font-weight:600}
+.eq-detail-body{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.eq-detail-foot{padding:12px 16px;border-top:0.5px solid var(--border)}
+.eq-stat{display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.eq-stat:last-child{border-bottom:none}
+.eq-stat-label{color:var(--text2);width:90px;flex-shrink:0}
+.eq-stat-val{font-weight:500;color:var(--text)}
+.eq-hist-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+
+/* Period filter in reservas */
+.filter-period{display:flex;gap:4px;flex-wrap:wrap}
+.filter-period-btn{padding:4px 10px;border:0.5px solid var(--border2);border-radius:20px;font-size:11px;cursor:pointer;background:var(--bg2);color:var(--text2);transition:all .1s}
+.filter-period-btn.active{background:var(--blue);color:#fff;border-color:var(--blue-dark)}
+
+/* Eq card clickable */
+.eq-card{cursor:pointer;transition:border-color .15s,box-shadow .15s;overflow:hidden}
+.eq-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(55,138,221,0.12)}
+.eq-card-strip{height:4px;margin:-12px -12px 8px -12px}
+.strip-akta{background:var(--blue)}
+.strip-col{background:var(--green)}
+.strip-other{background:var(--amber)}
+
+/* Maintenance booking */
+.type-toggle{display:flex;gap:6px;margin-bottom:2px}
+.type-btn{flex:1;padding:8px;border:0.5px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:500;text-align:center;transition:all .15s;background:var(--bg2);color:var(--text)}
+.type-btn.sel-exp{background:#E6F1FB;color:#185FA5;border-color:#378ADD}
+.type-btn.sel-manut{background:#FAEEDA;color:#854F0B;border-color:#BA7517}
+.ev-manut{background:#FAEEDA;color:#854F0B}
+.badge-manut{background:#FAEEDA;color:#854F0B}
+.manut-banner{background:#FAEEDA;border:0.5px solid #BA7517;border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:#854F0B;display:flex;align-items:center;gap:6px}
+
+/* External user badge */
+.badge-ext{background:#F1EFE8;color:#5F5E5A;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:500}
+.user-ext-tag{font-size:11px;padding:2px 7px;border-radius:4px;background:#F1EFE8;color:#5F5E5A;font-weight:500}
+/* Second user */
+.second-user-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;margin-top:0}
+.second-user-box p{font-size:12px;color:var(--text);margin-bottom:8px;font-weight:500;display:flex;align-items:center;gap:5px}
+/* Protocol field */
+.protocol-badge{font-size:10px;padding:2px 7px;border-radius:4px;background:#E6F1FB;color:#185FA5;font-weight:500}
+/* Notification dot */
+.notif-dot{width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block;margin-left:4px;vertical-align:middle}
+
+/* Shaker-specific fields */
+.shaker-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px}
+.shaker-box p{font-size:12px;color:var(--text);margin-bottom:10px;font-weight:500;display:flex;align-items:center;gap:5px}
+.shaker-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.temp-row{display:flex;gap:6px;align-items:center}
+.temp-row span{font-size:12px;color:var(--text2);white-space:nowrap}
+.badge-shaker{background:#EAF3DE;color:#3B6D11;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.overnight-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);margin-top:6px;cursor:pointer}
+.overnight-toggle input{width:16px;height:16px;cursor:pointer;accent-color:var(--blue)}
+
+/* Column usage counter */
+.col-counter-wrap{display:flex;align-items:flex-end;gap:10px;margin-top:6px}
+.col-tube{position:relative;width:28px;flex-shrink:0}
+.col-tube-body{width:28px;border:2px solid var(--border2);border-radius:14px 14px 4px 4px;overflow:hidden;background:var(--bg2);position:relative}
+.col-tube-fill{width:100%;transition:height .5s ease,background .3s;border-radius:0 0 2px 2px;position:absolute;bottom:0;left:0}
+.col-tube-cap{width:20px;height:6px;background:var(--border2);border-radius:3px 3px 0 0;margin:0 auto -1px}
+.col-counter-info{flex:1}
+.col-counter-label{font-size:11px;color:var(--text2);margin-bottom:2px}
+.col-counter-val{font-size:13px;font-weight:600;color:var(--text)}
+.col-counter-warn{font-size:11px;color:var(--amber);font-weight:500;margin-top:2px}
+.col-counter-danger{font-size:11px;color:var(--red);font-weight:500;margin-top:2px}
+.col-reset-btn{font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg2);color:var(--text2)}
+.col-reset-btn:hover{border-color:var(--blue);color:var(--blue)}
+/* Column detail in eq-card */
+.col-usage-bar{margin-top:6px}
+.col-usage-track{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:3px 0}
+.col-usage-fill{height:100%;border-radius:3px;transition:width .4s}
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
+<!-- ═══════════════════════════════════════ LOGIN SCREEN -->
 <div id="loading-screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:16px;font-family:system-ui;background:#f7f7f5">
   <div style="display:flex;align-items:center;gap:10px">
-    <div style="width:36px;height:36px;border-radius:9px;background:#6C3FC5;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px">VL</div>
-    <span style="font-size:20px;font-weight:700;color:#1a1a18">Varioskan <span style="font-weight:400;color:#5a5a56">Reservas</span></span>
+    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:34px;height:34px"><rect width="36" height="36" rx="9" fill="#378ADD"/><text y="26" x="18" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="15" fill="white">LB</text></svg>
+    <span style="font-size:18px;font-weight:700">LBEA Reservas</span>
   </div>
   <div style="display:flex;align-items:center;gap:8px;color:#888;font-size:13px">
-    <div style="width:18px;height:18px;border:2px solid #e0e0e0;border-top-color:#6C3FC5;border-radius:50%;animation:spin .7s linear infinite"></div>
-    Carregando...
+    <div style="width:16px;height:16px;border:2px solid #e0e0e0;border-top-color:#378ADD;border-radius:50%;animation:spin .7s linear infinite"></div>
+    Verificando login...
   </div>
 </div>
-
-<!-- LOGIN -->
 <div id="login-screen" style="display:none">
   <div class="login-screen">
-    <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;margin-bottom:24px">
-      <div class="logo-box">VL</div>
-      Varioskan <span style="font-weight:400;color:var(--text2)">Reservas</span>
+    <div class="logo"><svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:30px;height:30px"><rect width="36" height="36" rx="9" fill="#378ADD"/><text y="26" x="18" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="15" fill="white">LB</text></svg> LBEA Reservas</div>
+
+    <!-- LOGIN MODE -->
+    <div id="auth-login-mode">
+      <h2>Entrar</h2>
+      <p>Acesse com sua conta Google para reservar equipamentos.</p>
+      <div id="auth-error" style="display:none;margin-bottom:10px"></div>
+      <button class="btn" style="width:100%;justify-content:center;gap:10px;padding:12px;font-size:14px" onclick="signInGoogle()">
+        <svg width="20" height="20" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 009 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 013.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 000 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 00.96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+        Entrar com Google
+      </button>
+      <p style="font-size:11px;color:var(--text3);margin-top:16px;text-align:center">Use sua conta Gmail ou e-mail institucional (@usp.br)</p>
     </div>
-    <h2 style="font-size:18px;font-weight:700;margin-bottom:6px">Entrar</h2>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Acesse com sua conta Google para reservar o Varioskan Lux (ICB II — Sala 246A).</p>
-    <div id="auth-error" style="display:none;margin-bottom:10px"></div>
-    <button class="btn" style="width:100%;justify-content:center;gap:10px;padding:12px;font-size:14px" onclick="signInGoogle()" id="google-btn">
-      <svg width="20" height="20" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 009 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 013.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 000 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 00.96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
-      Entrar com Google
+
+    <div id="auth-signup-mode" style="display:none"></div>
+    <div id="auth-reset-mode" style="display:none"></div>
+    <div id="signup-error" style="display:none"></div>
+    <div id="reset-error" style="display:none"></div>
+
+    <p style="font-size:11px;color:var(--text3);margin-top:16px;text-align:center">Acesso restrito a membros do laboratório.</p>
+  </div>
+</div>
+
+<!-- NAME PICKER — shown on first login -->
+<div id="name-picker-screen" style="display:none">
+  <div class="login-screen">
+    <div class="logo"><svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:30px;height:30px"><rect width="36" height="36" rx="9" fill="#378ADD"/><text y="26" x="18" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="15" fill="white">LB</text></svg> LBEA Reservas</div>
+    <h2>Como quer ser identificado?</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Este nome aparecerá nas reservas e para os outros usuários.</p>
+    <div class="field">
+      <label>Seu nome no laboratório</label>
+      <input type="text" id="picker-name" placeholder="ex: Camilla, Luís Victor, Tom..." autocomplete="off"
+        onkeydown="if(event.key==='Enter')confirmName()">
+    </div>
+    <div id="picker-error" style="display:none;margin-bottom:8px"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px;margin-top:4px" onclick="confirmName()" id="confirm-name-btn">
+      Confirmar nome e entrar
     </button>
-    <p style="font-size:11px;color:var(--text3);margin-top:16px;text-align:center">Dúvidas: Rodrigo rgalhard@usp.br / Valdir valdir.barth@usp.br</p>
+    <p style="font-size:11px;color:var(--text3);margin-top:14px;text-align:center">Você poderá alterar seu nome depois nas configurações do perfil.</p>
   </div>
 </div>
 
-<!-- APP -->
+<!-- ═══════════════════════════════════════ MAIN APP -->
 <div id="app" style="display:none">
-  <div class="topbar">
-    <div class="topbar-logo">
-      <div class="logo-box">VL</div>
-      <span>Varioskan <span style="font-weight:400;color:var(--text2)">Reservas</span></span>
-    </div>
-    <div style="flex:1"></div>
-    <div class="topbar-user" onclick="logout()" title="Sair">
-      <div class="avatar" id="top-avatar">?</div>
-      <span id="top-name" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
-    </div>
-  </div>
-  <div class="nav-tabs">
-    <div class="nav-tab active" data-tab="timeline" onclick="switchTab(this)">📅 Agenda</div>
-    <div class="nav-tab" data-tab="reservas" onclick="switchTab(this)">📋 Reservas</div>
-    <div class="nav-tab" data-tab="status" onclick="switchTab(this)">📊 Status</div>
-    <div class="nav-tab" id="admin-tab" data-tab="admin" onclick="switchTab(this)" style="display:none">⚙️ Admin <span id="pending-badge" style="display:none;background:var(--red);color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px">!</span></div>
-  </div>
-
-  <div class="main">
-
-    <!-- AGENDA (Timeline) -->
-    <div class="panel active" id="panel-timeline">
-      <div class="info-box">
-        📋 <strong>Regras:</strong> Confirme a lista antes de reservar. Não reserve o mesmo horário que outra pessoa. Não reservar por mais de 2 dias seguidos sem autorização prévia. Curvas &gt;48h: iniciar na sexta e ler no final de semana.
+  <div class="app-shell">
+    <div class="topbar">
+      <div class="topbar-logo">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:30px;height:30px;flex-shrink:0"><rect width="36" height="36" rx="9" fill="#378ADD"/><text y="26" x="18" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="15" fill="white">LB</text></svg>
+        <span>LBEA <span style="font-weight:400;color:var(--text2)">Reservas</span></span>
       </div>
-      <div class="week-nav">
-        <button class="btn btn-sm" onclick="changeWeek(-1)">‹ Semana anterior</button>
-        <h2 id="week-title"></h2>
-        <button class="btn btn-sm" onclick="goToday2()">Hoje</button>
-        <button class="btn btn-sm" onclick="changeWeek(1)">Próxima semana ›</button>
-        <button class="btn btn-primary btn-sm" onclick="openNew(null,null)">+ Reservar</button>
-      </div>
-      <div class="timeline-wrap">
-        <div class="timeline-grid" id="timeline-grid"></div>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-user" onclick="logout()" title="Clique para sair">
+        <div class="avatar" id="top-avatar">?</div>
+        <span id="top-name" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
       </div>
     </div>
 
-    <!-- RESERVAS -->
-    <div class="panel" id="panel-reservas">
-      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
-        <select id="f-user" onchange="renderReservas()" style="flex:1;min-width:130px"><option value="">Todos os usuários</option></select>
-        <select id="f-lab" onchange="renderReservas()" style="flex:1;min-width:130px"><option value="">Todos os laboratórios</option></select>
-        <input type="text" id="f-search" placeholder="Buscar..." style="flex:1;min-width:110px" oninput="debounceSearch()">
-        <button class="btn btn-sm" onclick="exportCSV()">⬇ CSV</button>
+    <div class="nav-tabs">
+      <div class="nav-tab active" data-tab="calendar" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Calendário
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-        <span style="font-size:12px;color:var(--text2);align-self:center">Filtro:</span>
-        <div class="btn btn-sm" id="fp-all" onclick="selFP(this,'')" style="border-color:var(--purple);color:var(--purple)">Todos</div>
-        <div class="btn btn-sm" id="fp-future" onclick="selFP(this,'future')">Futuras</div>
-        <div class="btn btn-sm" id="fp-past" onclick="selFP(this,'past')">Passadas</div>
-        <div class="btn btn-sm" id="fp-manut" onclick="selFP(this,'manut')">🔧 Manutenção</div>
+      <div class="nav-tab" data-tab="reservas" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Reservas
       </div>
-      <div id="reservas-list"></div>
-    </div>
-
-    <!-- STATUS -->
-    <div class="panel" id="panel-status">
-      <div id="usage-section"></div>
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <strong style="font-size:14px">Próximas reservas</strong>
-        </div>
-        <div id="upcoming-list"></div>
+      <div class="nav-tab" data-tab="equipamentos" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        Equipamentos
+      </div>
+      <div class="nav-tab" id="admin-tab" data-tab="admin" onclick="switchTab(this)" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Admin
       </div>
     </div>
 
-    <!-- ADMIN -->
-    <div class="panel" id="panel-admin">
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <strong style="font-size:14px">Usuários</strong>
-          <span style="font-size:11px;color:var(--text2)">Cadastro automático via Google</span>
+    <div class="main">
+      <!-- CALENDÁRIO -->
+      <div class="panel active" id="panel-calendar">
+        <div class="cal-header">
+          <button class="btn btn-icon" onclick="changeMonth(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <h2 id="cal-title"></h2>
+          <span id="cal-bk-count" style="font-size:12px;color:var(--text2);font-weight:400"></span>
+          <button class="btn btn-icon" onclick="changeMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+          <button class="btn btn-primary btn-sm" onclick="openNew(null)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Nova reserva
+          </button>
         </div>
-        <div id="admin-user-list"></div>
+        <div class="cal-grid" id="cal-grid"></div>
       </div>
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <strong style="font-size:14px">⏳ Reservas pendentes</strong>
-          <span style="font-size:11px;color:var(--text2)" id="pending-count"></span>
+
+      <!-- RESERVAS -->
+      <div class="panel" id="panel-reservas">
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+          <select id="f-eq" onchange="renderReservas()" style="flex:1;min-width:140px">
+            <option value="">Todos os equipamentos</option>
+          </select>
+          <select id="f-user" onchange="renderReservas()" style="flex:1;min-width:120px">
+            <option value="">Todos os usuários</option>
+          </select>
+          <input type="text" id="f-search" placeholder="Buscar..." style="flex:1;min-width:110px" oninput="debounceSearch()">
+          <button class="btn btn-sm" onclick="exportCSV()" title="Exportar CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            CSV
+          </button>
         </div>
-        <div id="admin-pending-list"><p style="font-size:13px;color:var(--text2)">Nenhuma reserva pendente.</p></div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--text2);white-space:nowrap">Período:</span>
+          <div class="filter-period">
+            <div class="filter-period-btn active" data-m="" onclick="selPeriodFilter(this)">Todos</div>
+            <div class="filter-period-btn" data-m="manut" onclick="selPeriodFilter(this)">🔧 Manutenções</div>
+            <div class="filter-period-btn" data-m="past" onclick="selPeriodFilter(this)">Passadas</div>
+            <div class="filter-period-btn" data-m="today" onclick="selPeriodFilter(this)">Hoje</div>
+            <div class="filter-period-btn" data-m="week" onclick="selPeriodFilter(this)">Próx. 7 dias</div>
+            <div class="filter-period-btn" data-m="month" onclick="selPeriodFilter(this)">Este mês</div>
+            <div class="filter-period-btn" data-m="future" onclick="selPeriodFilter(this)">Futuras</div>
+          </div>
+        </div>
+        <div id="reservas-list"></div>
       </div>
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <strong style="font-size:14px">📊 Limite de horas por usuário</strong>
-          <span style="font-size:11px;color:var(--text2)">${{new Date().toLocaleString('pt-BR',{month:'long',year:'numeric'})}}</span>
-        </div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Limite padrão: ${DEFAULT_LIMIT}h/mês. Clique em "Ajustar" para definir limite individual.</p>
-        <div id="admin-limits-list"></div>
+
+      <!-- EQUIPAMENTOS -->
+      <div class="panel" id="panel-equipamentos">
+        <div class="eq-grid" id="eq-grid"></div>
       </div>
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <strong style="font-size:14px">Contador de usos</strong>
-          <button class="btn btn-sm btn-primary" onclick="resetUsage()">🔄 Resetar</button>
+
+      <!-- ADMIN -->
+      <div class="panel" id="panel-admin">
+        <div style="display:grid;gap:16px">
+          <!-- Gestão de usuários -->
+          <div class="card">
+            <div class="section-head">
+              <h3>Usuários cadastrados</h3>
+              <span style="font-size:11px;color:var(--text2)">Cadastro automático no primeiro login</span>
+            </div>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Membros se cadastram pela tela de login (Google ou e-mail). Aqui você pode promover a admin, marcar como externo ou remover acesso.</p>
+            <div id="admin-user-list"></div>
+          </div>
+          <!-- Contador de colunas -->
+          <div class="card">
+            <div class="section-head">
+              <h3>Uso das colunas</h3>
+              <span style="font-size:11px;color:var(--text2)">Clique na coluna para resetar</span>
+            </div>
+            <div id="admin-col-counters"></div>
+          </div>
+          <!-- Todas as reservas -->
+          <div class="card">
+            <div class="section-head">
+              <h3>Todas as reservas</h3>
+              <button class="btn btn-sm" onclick="exportCSV()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Exportar CSV
+              </button>
+            </div>
+            <div id="admin-reservas-list"></div>
+          </div>
         </div>
-        <div id="admin-usage"></div>
-      </div>
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <strong style="font-size:14px">Todas as reservas</strong>
-          <button class="btn btn-sm" onclick="exportCSV()">⬇ CSV</button>
-        </div>
-        <div id="admin-bk-list"></div>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- BOOKING MODAL -->
+
+<!-- DAY POPUP -->
+<div class="day-popup" id="day-popup" style="display:none" onclick="if(event.target===this)closeDayPopup()">
+  <div class="day-popup-box">
+    <div class="day-popup-head">
+      <h3 id="day-popup-title">Reservas do dia</h3>
+      <button class="btn btn-icon" onclick="closeDayPopup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="day-popup-body" id="day-popup-body"></div>
+    <div class="day-popup-foot">
+      <button class="btn btn-primary" style="width:100%" onclick="newFromDayPopup()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+        Nova reserva neste dia
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EQ DETAIL MODAL -->
+<div class="eq-detail" id="eq-detail" style="display:none" onclick="if(event.target===this)closeEqDetail()">
+  <div class="eq-detail-box">
+    <div class="eq-detail-head">
+      <h3 id="eq-detail-name">Equipamento</h3>
+      <button class="btn btn-icon" onclick="closeEqDetail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="eq-detail-body" id="eq-detail-body"></div>
+    <div class="eq-detail-foot">
+      <button class="btn btn-primary" style="width:100%" id="eq-detail-reserve-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>
+        Reservar este equipamento
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ BOOKING MODAL -->
 <div class="overlay" id="booking-modal" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-head">
       <h3 id="modal-title">Nova reserva</h3>
-      <button class="btn" style="width:28px;height:28px;padding:0;justify-content:center" onclick="closeModal()">✕</button>
+      <button class="btn btn-icon" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="modal-body">
       <div class="field">
-        <label>Tipo</label>
+        <label>Tipo de reserva</label>
         <div class="type-toggle">
-          <div class="type-btn sel-exp" id="tb-exp" onclick="setType('experimento')">🔬 Experimento</div>
-          <div class="type-btn" id="tb-manut" onclick="setType('manutencao')">🔧 Manutenção</div>
-        </div>
-        <div id="manut-banner" style="display:none" class="alert alert-warn" style="margin-top:4px">⚠️ Manutenção bloqueia o equipamento para todos.</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="field">
-          <label>Data de início</label>
-          <input type="date" id="bk-start-date">
-        </div>
-        <div class="field">
-          <label>Hora de início</label>
-          <select id="bk-start-hour"></select>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="field">
-          <label>Data de fim</label>
-          <input type="date" id="bk-end-date">
-        </div>
-        <div class="field">
-          <label>Hora de fim</label>
-          <select id="bk-end-hour"></select>
-        </div>
-      </div>
-      <div id="duration-label" style="font-size:12px;color:var(--text2);margin-top:-6px"></div>
-      <div id="days-warn" style="display:none" class="alert alert-warn">⚠️ Você está reservando mais de 2 dias seguidos. Isso requer autorização prévia dos responsáveis.</div>
-      <div id="exp-fields">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="field">
-            <label>Tipo de leitura</label>
-            <select id="bk-read-type">
-              <option value="">Selecione...</option>
-              <option value="Absorbância">Absorbância</option>
-              <option value="Fluorescência">Fluorescência</option>
-              <option value="Luminescência">Luminescência</option>
-              <option value="FRET">FRET</option>
-              <option value="TSA / Thermal Shift">TSA / Thermal Shift</option>
-              <option value="Cinética">Cinética</option>
-              <option value="Outro">Outro</option>
-            </select>
+          <div class="type-btn sel-exp" id="type-exp" onclick="setBookingType('experimento')">
+            🔬 Experimento
           </div>
-          <div class="field">
-            <label>Placa</label>
-            <select id="bk-plate">
-              <option value="">Selecione...</option>
-              <option value="6 poços">6 poços</option>
-              <option value="24 poços">24 poços</option>
-              <option value="48 poços">48 poços</option>
-              <option value="96 poços">96 poços</option>
-              <option value="384 poços">384 poços</option>
-              <option value="Outro">Outro</option>
-            </select>
+          <div class="type-btn" id="type-manut" onclick="setBookingType('manutencao')">
+            🔧 Manutenção
           </div>
         </div>
-        <div class="field">
-          <label>Proteína / Amostra</label>
-          <input type="text" id="bk-protein" placeholder="ex: MadB, TraI...">
+        <div id="manut-banner" style="display:none" class="manut-banner">
+          ⚠️ Manutenção bloqueia o equipamento (e coluna) para todos os usuários neste período.
         </div>
       </div>
       <div class="field">
-        <label>Usuário</label>
+        <label>Data</label>
+        <input type="text" id="bk-date-display" readonly style="background:var(--bg2);cursor:default">
+        <input type="hidden" id="bk-date">
+      </div>
+      <div class="field">
+        <label>Período</label>
+        <div class="period-grid" id="period-grid">
+          <div class="period-pill" data-p="manha" onclick="selPeriod(this)">Manhã · 8h–12h</div>
+          <div class="period-pill" data-p="tarde" onclick="selPeriod(this)">Tarde · 13h–17h</div>
+          <div class="period-pill" data-p="noite" onclick="selPeriod(this)">Noite · 17h–22h</div>
+          <div class="period-pill" data-p="diatodo" onclick="selPeriod(this)">Dia todo</div>
+          <div class="period-pill" data-p="multidias" onclick="selPeriod(this)">Mais de um dia</div>
+          <div class="period-pill" data-p="custom" onclick="selPeriod(this)">Horário específico</div>
+        </div>
+      </div>
+      <div id="custom-time" style="display:none">
+        <div class="field">
+          <label>Horário exato</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="time" id="bk-start" value="08:00" style="width:120px" oninput="calcExpDuration()">
+            <span style="color:var(--text2);font-size:13px">até</span>
+            <input type="time" id="bk-end" value="12:00" style="width:120px">
+          </div>
+        </div>
+      </div>
+      <!-- SHAKER: horário de início da expressão -->
+      <div id="shaker-time-section" style="display:none">
+        <div class="field">
+          <label>Início da expressão (data e hora)</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="bk-shaker-start-date" style="flex:1;min-width:130px" oninput="calcExpDuration()">
+            <input type="time" id="bk-shaker-start-time" value="09:00" style="width:110px" oninput="calcExpDuration()">
+          </div>
+        </div>
+      </div>
+      <div id="multiday-dates" style="display:none">
+        <div class="field">
+          <label>Período (de / até)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="date" id="bk-date-start" style="flex:1">
+            <span style="color:var(--text2);font-size:13px">até</span>
+            <input type="date" id="bk-date-end" style="flex:1">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Equipamento principal</label>
+        <select id="bk-eq" onchange="onEqChange()"></select>
+      </div>
+      <div id="combo-section" style="display:none">
+        <div class="combo-box">
+          <p>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+            Reservar junto com uma coluna (opcional)
+          </p>
+          <div class="field">
+            <label>Coluna / Modo</label>
+            <select id="bk-col" onchange="onColChange()">
+              <option value="">Sem coluna</option>
+              <option value="_cromatografia">Só cromatografia (sem coluna SEC)</option>
+            </select>
+          </div>
+          <div id="col-period-section" style="display:none;margin-top:10px">
+            <!-- Equilibração overnight -->
+            <label class="overnight-toggle" style="margin-bottom:10px">
+              <input type="checkbox" id="bk-equil-on" onchange="toggleEquilON(this)">
+              Equilibrar coluna overnight (noite anterior)
+            </label>
+            <div id="equil-on-info" style="display:none;background:var(--blue-light);border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:12px;color:var(--blue-dark);line-height:1.5">
+              🌙 A coluna ficará reservada também na noite anterior para equilibração. Isso aparecerá no calendário como reserva do dia anterior.
+            </div>
+            <div class="field">
+              <label>Período da coluna</label>
+              <div class="period-grid" id="col-period-grid">
+                <div class="period-pill" data-cp="manha" onclick="selColPeriod(this)">Manhã · 8h–12h</div>
+                <div class="period-pill" data-cp="tarde" onclick="selColPeriod(this)">Tarde · 13h–17h</div>
+                <div class="period-pill" data-cp="noite" onclick="selColPeriod(this)">Noite · 17h–22h</div>
+                <div class="period-pill" data-cp="diatodo" onclick="selColPeriod(this)">Dia todo</div>
+                <div class="period-pill" data-cp="multidias" onclick="selColPeriod(this)">Mais de um dia</div>
+                <div class="period-pill" data-cp="mesmo" onclick="selColPeriod(this)">Mesmo do ÄKTA</div>
+              </div>
+            </div>
+            <div id="col-multiday-dates" style="display:none;margin-top:8px">
+              <div class="field">
+                <label>Período da coluna (de / até)</label>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input type="date" id="bk-col-date-start" style="flex:1">
+                  <span style="color:var(--text2);font-size:13px">até</span>
+                  <input type="date" id="bk-col-date-end" style="flex:1">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Usuário principal</label>
         <select id="bk-user"></select>
-        <p id="bk-user-lock" style="font-size:11px;color:var(--text3);margin-top:3px;display:none">Só admins podem reservar por outro usuário.</p>
+        <p id="bk-user-lock-note" style="font-size:11px;color:var(--text3);margin-top:3px;display:none">Apenas admins podem reservar em nome de outra pessoa.</p>
+      </div>
+      <div class="second-user-box">
+        <p>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 11a4 4 0 100-8 4 4 0 000 8z"/></svg>
+          Segundo usuário / colaborador (opcional)
+        </p>
+        <div class="field" style="margin-bottom:8px">
+          <label>Nome</label>
+          <input type="text" id="bk-user2" placeholder="Nome do segundo usuário...">
+        </div>
+        <div class="field">
+          <label>Instituição / Laboratório (se externo)</label>
+          <input type="text" id="bk-inst" placeholder="ex: Unicamp, Lab 154, Lab 250...">
+        </div>
       </div>
       <div class="field">
-        <label>Laboratório <span style="color:var(--red)">*</span></label>
-        <input type="text" id="bk-lab" placeholder="ex: Lab A, Lab B...">
+        <label>Proteína / Amostra / Organismo</label>
+        <input type="text" id="bk-protein" placeholder="ex: MadB, NigBII/I, BL21(DE3)...">
+      </div>
+      <div id="shaker-section" style="display:none">
+        <div class="shaker-box">
+          <p>🧫 Parâmetros do shaker</p>
+          <div id="shaker-capacity-bar" style="margin-bottom:10px;display:none">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px">
+              <span>Capacidade usada neste período</span>
+              <span id="shaker-cap-text">0 / 8L</span>
+            </div>
+            <div style="background:var(--bg3);border-radius:4px;height:8px;overflow:hidden">
+              <div id="shaker-cap-fill" style="height:100%;background:var(--blue);border-radius:4px;transition:width .3s;width:0%"></div>
+            </div>
+            <div id="shaker-cap-users" style="font-size:11px;color:var(--text2);margin-top:4px"></div>
+          </div>
+          <div class="shaker-grid">
+            <div class="field">
+              <label>Nº de erlens / frascos</label>
+              <select id="bk-erlens">
+                <option value="">Selecione...</option>
+                <option value="1">1 erlen</option>
+                <option value="2">2 erlens</option>
+                <option value="4">4 erlens</option>
+                <option value="6">6 erlens</option>
+                <option value="8">8 erlens</option>
+                <option value="10">10 erlens</option>
+                <option value="12">12 erlens</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Volume total (L)</label>
+              <input type="number" id="bk-volume" min="0.1" max="8" step="0.5" placeholder="ex: 2, 4, 8..." oninput="checkShakerCapacity()">
+            </div>
+          </div>
+          <div class="field" style="margin-top:8px">
+            <label>Temperatura inicial (°C)</label>
+            <div class="temp-row">
+              <select id="bk-temp1" style="flex:1">
+                <option value="">Selecione...</option>
+                <option value="16">16°C</option>
+                <option value="18">18°C</option>
+                <option value="20">20°C</option>
+                <option value="25">25°C</option>
+                <option value="30">30°C</option>
+                <option value="37">37°C</option>
+              </select>
+            </div>
+          </div>
+          <label class="overnight-toggle">
+            <input type="checkbox" id="bk-overnight" onchange="toggleOvernight(this)">
+            Protocolo overnight
+          </label>
+          <div id="overnight-fields" style="display:none;margin-top:8px">
+            <div class="field">
+              <label>Temperatura overnight (°C)</label>
+              <select id="bk-temp2" style="width:100%">
+                <option value="">Selecione...</option>
+                <option value="16">16°C</option>
+                <option value="18">18°C</option>
+                <option value="20">20°C</option>
+                <option value="25">25°C</option>
+                <option value="30">30°C</option>
+                <option value="37">37°C</option>
+              </select>
+            </div>
+            <div class="field" style="margin-top:8px">
+              <label>Horário da troca de temperatura</label>
+              <input type="time" id="bk-tempchange" value="22:00" style="width:120px">
+            </div>
+          </div>
+          <div class="field" style="margin-top:8px">
+            <label>Fim da expressão (data e hora)</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input type="date" id="bk-enddate" style="flex:1;min-width:130px" oninput="calcExpDuration()">
+              <input type="time" id="bk-endtime" value="09:00" style="width:110px" oninput="calcExpDuration()">
+            </div>
+            <span id="exp-duration-label" style="font-size:12px;color:var(--text2);margin-top:4px;display:block"></span>
+            <p style="font-size:11px;color:var(--text3);margin-top:4px">Após este horário o shaker fica livre para reserva</p>
+          </div>'''
+        </div>
       </div>
       <div class="field">
-        <label>Telefone para contato</label>
-        <input type="text" id="bk-phone" placeholder="ex: (XX) XXXXX-XXXX">
-      </div>
-      <div class="field">
-        <label>Observações</label>
-        <textarea id="bk-notes" placeholder="Detalhes, condições especiais..."></textarea>
+        <label>Observações (opcional)</label>
+        <textarea id="bk-notes" placeholder="ex: purificação His-tag, troca de tampão, limpeza coluna..."></textarea>
       </div>
       <div id="conflict-alert" style="display:none"></div>
     </div>
     <div class="modal-foot">
-      <button id="del-btn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteBooking()">🗑 Excluir</button>
-      <div class="sp"></div>
+      <button id="del-btn" class="btn btn-danger btn-sm" style="display:none" onclick="deleteBooking()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+        Excluir
+      </button>
+      <div class="spacer"></div>
       <button class="btn" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" id="save-btn" onclick="saveBooking()">Salvar</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveBooking()">Salvar reserva</button>
     </div>
   </div>
 </div>
 
-<!-- EDIT USER MODAL -->
-<div class="overlay" id="edit-user-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+<!-- EDIT USER INSTITUTION MODAL -->
+<div class="overlay" id="add-user-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal" style="max-width:360px">
-    <div class="modal-head"><h3>Editar usuário</h3><button class="btn" style="width:28px;height:28px;padding:0;justify-content:center" onclick="document.getElementById('edit-user-modal').style.display='none'">✕</button></div>
-    <div class="modal-body">
-      <p style="font-size:13px;font-weight:500" id="eu-name"></p>
-      <input type="hidden" id="eu-uid">
-      <div class="field"><label>Laboratório</label><input type="text" id="eu-lab" placeholder="ex: Marcol, Beny..."></div>
-      <div class="field"><label>Tipo</label>
-        <select id="eu-type"><option value="interno">Interno</option><option value="externo">Externo / Colaborador</option></select>
-      </div>
-      <div id="eu-error" style="display:none"></div>
+    <div class="modal-head">
+      <h3>Editar usuário</h3>
+      <button class="btn btn-icon" onclick="document.getElementById('add-user-modal').style.display='none'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
     </div>
-    <div class="modal-foot"><div class="sp"></div><button class="btn" onclick="document.getElementById('edit-user-modal').style.display='none'">Cancelar</button><button class="btn btn-primary" onclick="saveUserEdits()">Salvar</button></div>
+    <div class="modal-body">
+      <p style="font-size:13px;font-weight:500" id="au-name-display"></p>
+      <input type="hidden" id="au-uid">
+      <div class="field">
+        <label>Tipo</label>
+        <select id="au-type" onchange="document.getElementById('au-inst-field').style.display=this.value==='externo'?'block':'none'">
+          <option value="interno">Membro do laboratório</option>
+          <option value="externo">Colaborador externo</option>
+        </select>
+      </div>
+      <div class="field" id="au-inst-field" style="display:none">
+        <label>Instituição</label>
+        <input type="text" id="au-inst" placeholder="ex: Unicamp, Lab 154...">
+      </div>
+      <div id="au-error" style="display:none"></div>
+    </div>
+    <div class="modal-foot">
+      <div class="spacer"></div>
+      <button class="btn" onclick="document.getElementById('add-user-modal').style.display='none'">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUserEdits()">Salvar</button>
+    </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════
-// CONFIG — SUBSTITUA PELAS CREDENCIAIS DO NOVO FIREBASE
-// ═══════════════════════════════════
-const FIREBASE_CONFIG={
-  apiKey:"AIzaSyCIfOYLCPz2Z_cUOOZTc-IHNR-1tr09_T8",
-  authDomain:"rodrigo-lab-7117b.firebaseapp.com",
-  projectId:"rodrigo-lab-7117b",
-  storageBucket:"rodrigo-lab-7117b.firebasestorage.app",
-  messagingSenderId:"446900743906",
-  appId:"1:446900743906:web:699a998bf6bad9c329b8bb"
-};
-const ADMIN_EMAILS=['danilopavao@usp.br','rgalhard@usp.br'];
-const MAX_DAYS=2; // limite de dias consecutivos sem autorização
+// ═══════════════════════════════════════════════════
+// EQUIPAMENTOS
+// ═══════════════════════════════════════════════════
+const EQ = [
+  {id:'akta-start',   name:'ÄKTA Start',               cat:'akta'},
+  {id:'akta-go',      name:'ÄKTA GO',                   cat:'akta'},
+  {id:'akta-purifier',name:'ÄKTA Purifier',             cat:'akta'},
+  {id:'akta-prime',   name:'ÄKTA Prime',                cat:'akta'},
+  {id:'sdx75-velha',  name:'Superdex 75 pg XK16/600 (velha)', cat:'coluna'},
+  {id:'sdx75-nova',   name:'Superdex 75 pg XK16/600 (nova)',  cat:'coluna'},
+  {id:'sdx75-1030',   name:'Superdex 75 pg 10/300 GL',        cat:'coluna'},
+  {id:'sdx200i',      name:'Superdex 200 Increase 10/300 GL', cat:'coluna'},
+  {id:'sdx200-1',     name:'Superdex 200 pg XK16/600 (1)',    cat:'coluna'},
+  {id:'ss6',          name:'Superose 6 XK16/600',             cat:'coluna'},
+  {id:'peaq-itc',     name:'PEAQ-ITC',                  cat:'outro'},
+  {id:'shaker-1',     name:'Shaker Thermo',         cat:'outro'},
+  {id:'shaker-2',     name:'Shaker Eppendorf',         cat:'outro'},
+  {id:'termociclador',name:'Termociclador BioRad',       cat:'outro'},
+  {id:'termociclador-rt',name:'Termociclador RT (Thermal Shift)', cat:'outro'},
+];
+const eqById = id => EQ.find(e=>e.id===id);
+const eqName = id => { const e=eqById(id); return e?e.name:id; };
+const eqBadge = cat => cat==='akta'?'badge-akta':cat==='coluna'?'badge-col':cat==='outro'&&'badge-other';
+const evClass = cat => cat==='akta'?'ev-akta':cat==='coluna'?'ev-col':'ev-other';
 
-// ═══════════════════════════════════
+const PERIOD_LABELS = {manha:'Manhã (8h–12h)',tarde:'Tarde (13h–17h)',noite:'Noite (17h–22h)',diatodo:'Dia todo',multidias:'Mais de um dia',custom:'Horário específico'};
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DAYS_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+// ═══════════════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════
-let db=null,auth=null,currentUser=null,firebaseUser=null;
-let users=[],bookings=[];
-let usage={uses:0,limit:200,lastReset:null,lastResetBy:null};
-let weekStart=getWeekStart(new Date());
-let editingId=null,bookingType='experimento';
-let activeFP='';
-let userLimits={}; // {uid: {limit, months: {'YYYY-MM': hours}}}
-const DEFAULT_LIMIT=40; // horas por mês
+// ═══════════════════════════════════════════════════
+let db = null;
+let currentUser = null;
+let firebaseUser = null; // raw Firebase Auth user
+let users = [];      // [{id (=uid), name, isAdmin}] — user profiles keyed by auth UID
+let bookings = [];   // [{id, date, period, startTime, endTime, equipment, comboColumn, user, notes}]
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let editingId = null;
+let selectedPeriod = null;
+let selectedColPeriod = null;
+let bookingType = 'experimento';
+let auth = null;
+let colCounters = {}; // {colId: {uses, limit, lastReset, lastResetBy}}
 
-// ═══════════════════════════════════
-// INIT
-// ═══════════════════════════════════
-window.onload=async function(){
-  try{
-    if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
-    db=firebase.firestore();auth=firebase.auth();
-    auth.onAuthStateChanged(async u=>{
+// ═══════════════════════════════════════════════════
+// FIRESTORE HELPERS
+// ═══════════════════════════════════════════════════
+async function loadUsers(){
+  const snap = await db.collection('users').orderBy('name').get();
+  users = snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function loadBookings(){
+  const snap = await db.collection('bookings').orderBy('date','desc').get();
+  bookings = snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function listenBookings(){
+  db.collection('bookings').onSnapshot(snap=>{
+    bookings = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderCalendar();
+    if(document.getElementById('panel-reservas').classList.contains('active'))renderReservas();
+    if(document.getElementById('panel-equipamentos').classList.contains('active'))renderEquipamentos();
+    if(document.getElementById('panel-admin').classList.contains('active'))renderAdminBookings();
+  }, err=>console.error('Bookings listener error:',err));
+}
+async function listenUsers(){
+  db.collection('users').onSnapshot(snap=>{
+    users = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(document.getElementById('panel-admin').classList.contains('active'))renderAdmin();
+    syncUserSelects();
+  }, err=>console.error('Users listener error:',err));
+}
+
+// ═══════════════════════════════════════════════════
+// APP INIT
+// ═══════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBc6Lc8Qt97E3ZnzBGYVXrQk-Alk0ncA6Q",
+  authDomain: "lab-reservas-web.firebaseapp.com",
+  projectId: "lab-reservas-web",
+  storageBucket: "lab-reservas-web.firebasestorage.app",
+  messagingSenderId: "976950450103",
+  appId: "1:976950450103:web:0721d8c832fb6958ce7a32"
+};
+
+window.onload = async function(){
+  try {
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+
+    db = firebase.firestore();
+    auth = firebase.auth();
+    await db.collection('users').limit(1).get();
+    // Listen for auth state changes — this drives the whole app
+    auth.onAuthStateChanged(async (user)=>{
       hide('loading-screen');
-      if(u){firebaseUser=u;await loadOrCreateProfile(u);startApp();}
-      else{firebaseUser=null;currentUser=null;hide('app');show('login-screen');}
+      if(user){
+        firebaseUser = user;
+        const needsPicker = await loadOrCreateProfile(user);
+        if(!needsPicker) startApp();
+        // If needsPicker is true, confirmName() will call startApp() after
+      } else {
+        firebaseUser = null;
+        currentUser = null;
+        hide('app');
+        showLogin();
+      }
     });
-  }catch(e){
+  } catch(e){
     hide('loading-screen');
-    document.body.innerHTML=`<div style="padding:40px;font-family:sans-serif;color:#c00"><strong>Erro ao conectar:</strong><br>${e.message}</div>`;
+    document.body.innerHTML='<div style="padding:40px;font-family:sans-serif;color:#c00"><strong>LBEA Reservas — Erro ao conectar ao Firebase:</strong><br>'+e.message+'<br><br><small>Verifique se as credenciais do Firebase estão corretas.</small></div>';
   }
 };
 
-// ═══════════════════════════════════
-// AUTH
-// ═══════════════════════════════════
-async function signInGoogle(){
-  const btn=document.getElementById('google-btn');
-  btn.textContent='Conectando...';btn.disabled=true;
-  try{
-    const p=new firebase.auth.GoogleAuthProvider();
-    p.setCustomParameters({prompt:'select_account'});
-    await auth.signInWithPopup(p);
-  }catch(err){
-    btn.textContent='Entrar com Google';btn.disabled=false;
-    if(err.code!=='auth/popup-closed-by-user')
-      showEl('auth-error',`<div class="alert alert-danger">${err.message}</div>`);
-  }
-}
-function logout(){if(!confirm(`Sair?`))return;auth.signOut();}
-
+// Load this user's Firestore profile (name, isAdmin) or create one on first login
 async function loadOrCreateProfile(user){
-  const ref=db.collection('users').doc(user.uid);
-  const snap=await ref.get();
+  const ref = db.collection('users').doc(user.uid);
+  const snap = await ref.get();
   await loadUsers();
+  const ADMIN_EMAILS = ['danilopavao@usp.br'];
+
   if(snap.exists){
-    const d=snap.data();
-    const isAdm=ADMIN_EMAILS.includes(user.email)||d.isAdmin;
-    if(isAdm&&!d.isAdmin)await ref.update({isAdmin:true});
-    currentUser={id:user.uid,...d,isAdmin:isAdm};
-  }else{
-    const isAdmin=users.length===0||ADMIN_EMAILS.includes(user.email);
-    const p={name:user.displayName||user.email.split('@')[0],email:user.email,isAdmin,isExternal:false,lab:'',createdAt:new Date().toISOString()};
-    await ref.set(p);currentUser={id:user.uid,...p};await loadUsers();
+    const data = snap.data();
+    if(ADMIN_EMAILS.includes(user.email) && !data.isAdmin){
+      await ref.update({isAdmin: true});
+      data.isAdmin = true;
+    }
+    currentUser = {id:user.uid, ...data};
+    // Existing user — go straight to app
+    return false; // false = no name picker needed
+  } else {
+    // New user — show name picker
+    const suggestedName = user.displayName || user.email.split('@')[0];
+    const inp = document.getElementById('picker-name');
+    if(inp) inp.value = suggestedName;
+    hide('login-screen');
+    show('name-picker-screen');
+    // Store partial profile data for later
+    window._pendingProfile = {
+      uid: user.uid,
+      email: user.email,
+      isAdmin: users.length===0 || ADMIN_EMAILS.includes(user.email),
+      authProvider: user.providerData[0]?.providerId||'google.com',
+    };
+    return true; // true = name picker shown
   }
 }
 
-async function loadUsers(){const s=await db.collection('users').orderBy('name').get();users=s.docs.map(d=>({id:d.id,...d.data()}));}
+async function confirmName(){
+  const name = document.getElementById('picker-name').value.trim();
+  const errEl = document.getElementById('picker-error');
+  errEl.style.display='none';
+
+  if(!name || name.length < 2){
+    errEl.innerHTML='<div class="alert alert-danger">⚠️ Informe um nome com pelo menos 2 caracteres.</div>';
+    errEl.style.display='block'; return;
+  }
+  // Check for duplicate name
+  if(users.find(u=>u.name.toLowerCase()===name.toLowerCase())){
+    errEl.innerHTML='<div class="alert alert-danger">⚠️ Já existe um usuário com esse nome. Escolha outro.</div>';
+    errEl.style.display='block'; return;
+  }
+
+  const btn = document.getElementById('confirm-name-btn');
+  btn.textContent='Entrando...'; btn.disabled=true;
+
+  try{
+    const p = window._pendingProfile;
+    const profile = {
+      name,
+      email: p.email,
+      isAdmin: p.isAdmin,
+      authProvider: p.authProvider,
+      createdAt: new Date().toISOString()
+    };
+    await db.collection('users').doc(p.uid).set(profile);
+    currentUser = {id:p.uid, ...profile};
+    await loadUsers();
+    window._pendingProfile = null;
+    hide('name-picker-screen');
+    startApp();
+  }catch(err){
+    errEl.innerHTML=`<div class="alert alert-danger">Erro ao salvar: ${err.message}</div>`;
+    errEl.style.display='block';
+    btn.textContent='Confirmar nome e entrar'; btn.disabled=false;
+  }
+}
+
+function switchAuthMode(mode){
+  const safeHide=id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; };
+  const safeShow=id=>{ const el=document.getElementById(id); if(el) el.style.display='block'; };
+  const safeErr=id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; };
+  safeHide('auth-login-mode'); safeHide('auth-signup-mode'); safeHide('auth-reset-mode');
+  safeErr('auth-error'); safeErr('signup-error'); safeErr('reset-error');
+  if(mode==='login') safeShow('auth-login-mode');
+  if(mode==='signup') safeShow('auth-signup-mode');
+  if(mode==='reset') safeShow('auth-reset-mode');
+}
+
+function showLogin(){
+  show('login-screen');
+  switchAuthMode('login');
+}
+
+function authErrorMessage(err){
+  const map = {
+    'auth/invalid-email': 'E-mail inválido.',
+    'auth/user-disabled': 'Esta conta foi desativada.',
+    'auth/user-not-found': 'Nenhuma conta encontrada com esse e-mail.',
+    'auth/wrong-password': 'Senha incorreta.',
+    'auth/invalid-credential': 'E-mail ou senha incorretos.',
+    'auth/email-already-in-use': 'Já existe uma conta com esse e-mail. Tente entrar.',
+    'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.',
+    'auth/popup-closed-by-user': 'Login cancelado.',
+    'auth/network-request-failed': 'Erro de conexão. Verifique sua internet.',
+    'auth/too-many-requests': 'Muitas tentativas. Aguarde um momento e tente novamente.'
+  };
+  return map[err.code] || ('Erro ao autenticar: '+err.message);
+}
+
+async function signInGoogle(){
+  try{
+    const btn=document.querySelector('#auth-login-mode .btn');
+    btn.textContent='Abrindo login Google...'; btn.disabled=true;
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({'prompt':'select_account'});
+    await auth.signInWithPopup(provider);
+    // onAuthStateChanged handles the rest
+  }catch(err){
+    const btn=document.querySelector('#auth-login-mode .btn');
+    if(btn){ btn.innerHTML=`<svg width="20" height="20" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 009 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 013.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 000 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 00.96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg> Entrar com Google`; btn.disabled=false; }
+    if(err.code!=='auth/popup-closed-by-user'){
+      showEl('auth-error', `<div class="alert alert-danger">${authErrorMessage(err)}</div>`);
+    }
+  }
+}
+
+// signInEmail: not used (Google-only auth)
+
+// signUpEmail: not used (Google-only auth)
+
+async function sendResetEmail(){
+  const email=document.getElementById('reset-email').value.trim();
+  document.getElementById('reset-error').style.display='none';
+  if(!email){ showEl('reset-error','<div class="alert alert-danger">⚠️ Informe seu e-mail.</div>'); return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    showEl('reset-error','<div class="alert alert-success">✓ Link enviado! Verifique seu e-mail.</div>');
+  }catch(err){
+    showEl('reset-error', `<div class="alert alert-danger">${authErrorMessage(err)}</div>`);
+  }
+}
 
 function startApp(){
-  hide('login-screen');show('app');
-  document.getElementById('top-avatar').textContent=initials(currentUser.name);
-  document.getElementById('top-avatar').className='avatar'+(currentUser.isAdmin?' admin':'');
-  document.getElementById('top-name').textContent=currentUser.name+(currentUser.lab?` (${currentUser.lab})`:'');
-  if(currentUser.isAdmin)document.getElementById('admin-tab').style.display='block';
-  listenBookings();listenUsers();listenUsage();listenUserLimits();
-  renderTimeline();populateFilters();
-  // Pre-fill hour selects
-  const hs=Array.from({length:24},(_,i)=>`<option value="${i}">${pad(i)}:00</option>`).join('');
-  document.getElementById('bk-start-hour').innerHTML=hs;
-  document.getElementById('bk-end-hour').innerHTML=hs;
-  document.getElementById('bk-start-hour').value=8;
-  document.getElementById('bk-end-hour').value=12;
+  hide('login-screen');
+  show('app');
+  updateTopbar();
+  if(currentUser.isAdmin) document.getElementById('admin-tab').style.display='flex';
+  else document.getElementById('admin-tab').style.display='none';
+  listenBookings();
+  listenUsers();
+  listenColCounters();
+  renderCalendar();
+  populateFilters();
 }
 
-// ═══════════════════════════════════
-// FIRESTORE LISTENERS
-// ═══════════════════════════════════
-function listenBookings(){
-  db.collection('bookings').onSnapshot(s=>{
-    bookings=s.docs.map(d=>({id:d.id,...d.data()}));
-    renderTimeline();
-    if(document.getElementById('panel-reservas').classList.contains('active'))renderReservas();
-    if(document.getElementById('panel-status').classList.contains('active'))renderStatus();
-    if(document.getElementById('panel-admin').classList.contains('active'))renderAdmin();
-    // Update pending badge
-    const pending=bookings.filter(b=>b.pending).length;
-    const badge=document.getElementById('pending-badge');
-    if(badge&&currentUser?.isAdmin){
-      badge.style.display=pending>0?'inline':'none';
-      badge.textContent=pending;
-    }
-  },err=>console.error(err));
-}
-function listenUsers(){
-  db.collection('users').onSnapshot(s=>{
-    users=s.docs.map(d=>({id:d.id,...d.data()}));
-    syncUserSelect();
-    if(document.getElementById('panel-admin').classList.contains('active'))renderAdminUsers();
-  },err=>console.error(err));
-}
-function listenUsage(){
-  db.collection('config').doc('usage').onSnapshot(s=>{
-    if(s.exists)usage={...usage,...s.data()};
-    if(document.getElementById('panel-status').classList.contains('active'))renderUsage();
-    if(document.getElementById('panel-admin').classList.contains('active'))renderAdminUsage();
-  },err=>console.error(err));
+async function listenColCounters(){
+  db.collection('colCounters').onSnapshot(snap=>{
+    colCounters={};
+    snap.docs.forEach(d=>{ colCounters[d.id]={...d.data()}; });
+    // Refresh equipment tab if open
+    if(document.getElementById('panel-equipamentos').classList.contains('active')) renderEquipamentos();
+  }, err=>console.error('colCounters error:',err));
 }
 
-// ═══════════════════════════════════
-// USER LIMITS
-// ═══════════════════════════════════
-function listenUserLimits(){
-  db.collection('userLimits').onSnapshot(snap=>{
-    userLimits={};
-    snap.docs.forEach(d=>{ userLimits[d.id]={...d.data()}; });
-    if(document.getElementById('panel-admin').classList.contains('active'))renderAdminLimits();
-  },err=>console.error('userLimits error:',err));
+function logout(){
+  if(!confirm(`Sair da conta de ${currentUser?.name||'usuário'}?`))return;
+  window._pendingProfile=null;
+  hide('name-picker-screen');
+  auth.signOut();
 }
 
-function currentMonth(){
-  const n=new Date();
-  return `${n.getFullYear()}-${pad(n.getMonth()+1)}`;
+function updateTopbar(){
+  document.getElementById('top-avatar').textContent = initials(currentUser.name);
+  document.getElementById('top-avatar').className = 'avatar'+(currentUser.isAdmin?' admin':'');
+  document.getElementById('top-name').textContent = currentUser.name;
 }
 
-function getUserHoursThisMonth(uid){
-  const ul=userLimits[uid];
-  if(!ul||!ul.months)return 0;
-  return ul.months[currentMonth()]||0;
-}
-
-function getUserLimit(uid){
-  return userLimits[uid]?.limit||DEFAULT_LIMIT;
-}
-
-async function addHoursToUser(uid,hours){
-  const month=currentMonth();
-  const ref=db.collection('userLimits').doc(uid);
-  const snap=await ref.get();
-  if(snap.exists){
-    const cur=snap.data().months?.[month]||0;
-    await ref.update({[`months.${month}`]: cur+hours});
-  } else {
-    await ref.set({limit:DEFAULT_LIMIT, months:{[month]:hours}});
-  }
-}
-
-async function setUserLimit(uid,name){
-  const cur=getUserLimit(uid);
-  const val=prompt(`Limite mensal de horas para ${name} (atual: ${cur}h):`,cur);
-  if(!val||isNaN(parseInt(val)))return;
-  const ref=db.collection('userLimits').doc(uid);
-  const snap=await ref.get();
-  if(snap.exists) await ref.update({limit:parseInt(val)});
-  else await ref.set({limit:parseInt(val),months:{}});
-}
-
-async function approvePending(id){
-  await db.collection('bookings').doc(id).update({pending:false,approvedBy:currentUser.name,approvedAt:new Date().toISOString()});
-}
-
-async function rejectPending(id,user){
-  if(!confirm(`Recusar reserva de ${user}?`))return;
-  await db.collection('bookings').doc(id).delete();
-}
-
-// ═══════════════════════════════════
+// ═══════════════════════════════════════════════════
 // TABS
-// ═══════════════════════════════════
+// ═══════════════════════════════════════════════════
+function switchTabById(id){
+  const tab=document.querySelector(`[data-tab="${id}"]`);
+  if(tab) switchTab(tab);
+}
 function switchTab(el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -595,656 +1135,1137 @@ function switchTab(el){
   const tab=el.dataset.tab;
   document.getElementById('panel-'+tab).classList.add('active');
   if(tab==='reservas')renderReservas();
-  if(tab==='status')renderStatus();
+  if(tab==='equipamentos')renderEquipamentos();
   if(tab==='admin')renderAdmin();
 }
 
-// ═══════════════════════════════════
-// TIMELINE
-// ═══════════════════════════════════
-function getWeekStart(date){
-  const d=new Date(date);
-  const day=d.getDay();
-  d.setDate(d.getDate()-day);
-  d.setHours(0,0,0,0);
-  return d;
+// ═══════════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════════
+function changeMonth(d){
+  calMonth+=d;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
 }
-function changeWeek(dir){weekStart=new Date(weekStart);weekStart.setDate(weekStart.getDate()+dir*7);renderTimeline();}
-function goToday2(){weekStart=getWeekStart(new Date());renderTimeline();}
+function goToday(){
+  const n=new Date();
+  calYear=n.getFullYear(); calMonth=n.getMonth();
+  renderCalendar();
+}
 
-const DAYS_PT=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-const MONTHS_SHORT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-
-// ── Drag-to-select state ──
-let dragState=null; // {startDate, startHour, active}
-
-function renderTimeline(){
-  const todayStr=fmtDate(new Date());
-  const days=Array.from({length:7},(_,i)=>{
-    const d=new Date(weekStart);d.setDate(d.getDate()+i);return d;
+function bksForDate(ds){
+  return bookings.filter(b=>{
+    // AKTA date range
+    if(b.period==='multidias'&&b.dateStart&&b.dateEnd) return ds>=b.dateStart&&ds<=b.dateEnd;
+    if(b.date===ds) return true;
+    // Also show on column's own dates if different from AKTA
+    if(b.comboColumn&&b.colPeriod==='multidias'&&b.colDateStart&&b.colDateEnd)
+      return ds>=b.colDateStart&&ds<=b.colDateEnd;
+    return false;
   });
-  const ws=days[0],we=days[6];
-  document.getElementById('week-title').textContent=
-    `${ws.getDate()} ${MONTHS_SHORT[ws.getMonth()]} – ${we.getDate()} ${MONTHS_SHORT[we.getMonth()]} ${we.getFullYear()}`;
+}
 
-  let html='';
-  html+=`<div class="tg-header"><div class="tg-time-col">Hora</div>`;
-  days.forEach(d=>{
-    const ds=fmtDate(d);
-    const isToday=ds===todayStr;
-    html+=`<div class="tg-day-header${isToday?' today-col':''}" onclick="openNew('${ds}',null)">${DAYS_PT[d.getDay()]}<br><span style="font-size:12px;font-weight:700">${d.getDate()}/${d.getMonth()+1}</span></div>`;
-  });
-  html+='</div>';
-
-  // For each column (day), build merged booking spans
-  // Map: dayStr -> array of {booking, startH, endH (within this day)}
-  const dayBookings={};
-  days.forEach(d=>{
-    const ds=fmtDate(d);
-    dayBookings[ds]=[];
-    bookings.forEach(b=>{
-      // Find hours this booking covers on this day
-      const hours=[];
-      for(let h=0;h<24;h++){
-        if(coversHour(b,ds,h)) hours.push(h);
-      }
-      if(hours.length>0){
-        dayBookings[ds].push({b, hours, startH:hours[0], endH:hours[hours.length-1]+1});
-      }
-    });
-  });
-
-  // Build grid row by row
-  for(let h=0;h<24;h++){
-    html+=`<div class="tg-row"><div class="tg-hour-label">${pad(h)}h</div>`;
-    days.forEach(d=>{
-      const ds=fmtDate(d);
-      const bksAtHour=dayBookings[ds].filter(x=>x.hours.includes(h));
-      const isFirstHour=bksAtHour.filter(x=>x.startH===h);
-      const isCovered=bksAtHour.length>0;
-
-      let cellContent='';
-      // Only render booking label at the FIRST hour of the block
-      isFirstHour.forEach(({b,startH,endH})=>{
-        const span=endH-startH;
-        const cls=b.pending?'bk-pending':b.bookingType==='manutencao'?'bk-manut':'bk-exp';
-        const label=b.bookingType==='manutencao'
-          ?`🔧 ${b.user.split(' ')[0]}`
-          :`${b.pending?'⏳ ':''}${b.user.split(' ')[0]}${b.lab?` (${b.lab})`:''}`;
-        const heightPx=span*28; // 28px per row
-        cellContent+=`<div class="tg-booking-block ${cls}" 
-          style="height:${heightPx}px;position:absolute;top:0;left:0;right:0;z-index:2;padding:3px 5px;overflow:hidden;border-radius:3px;cursor:pointer;line-height:1.3;font-size:10px"
-          onclick="event.stopPropagation();openEdit('${b.id}')"
-          title="${b.user}${b.lab?' · '+b.lab:''} · ${getDuration(b)}">
-          <strong>${label}</strong>
-          ${span>1?`<br><span style="opacity:.7">${pad(startH)}h–${pad(endH)}h</span>`:''}
-        </div>`;
-      });
-
-      // Only show empty cell if not covered, or if covered but not first hour (block handles it)
-      const posRel=isCovered?'position:relative;':'';
-      html+=`<div class="tg-cell${isCovered?' occupied':''}" 
-        style="${posRel}min-height:28px"
-        data-date="${ds}" data-hour="${h}" onmousedown="startDrag('${ds}',${h},event)"
-        onmouseenter="moveDrag('${ds}',${h})"
-        onmouseup="endDrag('${ds}',${h})"
-        onclick="${!isCovered?`openNew('${ds}',${h})`:''}">
-        ${cellContent}
-      </div>`;
-    });
-    html+='</div>';
+function renderCalendar(){
+  const monthBks=bookings.filter(b=>b.date&&b.date.startsWith(`${calYear}-${String(calMonth+1).padStart(2,'0')}`));
+  document.getElementById('cal-title').textContent=`${MONTHS[calMonth]} ${calYear}`;
+  const countEl=document.getElementById('cal-bk-count');
+  if(countEl) countEl.textContent=monthBks.length?`${monthBks.length} reserva${monthBks.length!==1?'s':''}`:''
+  document.getElementById('panel-calendar').scrollTop=0;
+  const grid=document.getElementById('cal-grid');
+  let html=DAYS_SHORT.map(d=>`<div class="cal-head">${d}</div>`).join('');
+  const first=new Date(calYear,calMonth,1).getDay();
+  const total=new Date(calYear,calMonth+1,0).getDate();
+  const today=fmtDate(new Date());
+  for(let i=0;i<first;i++){
+    const dt=new Date(calYear,calMonth,1-first+i);
+    html+=calCell(dt,true,today);
   }
-  document.getElementById('timeline-grid').innerHTML=html;
-
-  // Prevent text selection during drag
-  document.getElementById('timeline-grid').addEventListener('selectstart',e=>e.preventDefault());
-}
-
-// ── Drag to select multiple hours ──
-function startDrag(ds,h,e){
-  // Only start drag on empty cells
-  const cell=e.currentTarget;
-  if(cell.classList.contains('occupied'))return;
-  dragState={startDate:ds,startHour:h,endHour:h,active:true};
-  highlightDrag();
-}
-
-function moveDrag(ds,h){
-  if(!dragState||!dragState.active)return;
-  // Only drag within same day
-  if(ds!==dragState.startDate)return;
-  dragState.endHour=h;
-  highlightDrag();
-}
-
-function endDrag(ds,h){
-  if(!dragState||!dragState.active)return;
-  dragState.active=false;
-  const startH=Math.min(dragState.startHour,dragState.endHour);
-  const endH=Math.max(dragState.startHour,dragState.endHour)+1;
-  clearDragHighlight();
-  dragState=null;
-  // Open new booking with pre-filled times
-  if(endH-startH>=1){
-    openNew(ds,startH,endH);
+  for(let d=1;d<=total;d++){
+    html+=calCell(new Date(calYear,calMonth,d),false,today);
   }
-}
-
-function highlightDrag(){
-  if(!dragState)return;
-  clearDragHighlight();
-  const minH=Math.min(dragState.startHour,dragState.endHour);
-  const maxH=Math.max(dragState.startHour,dragState.endHour);
-  document.querySelectorAll('.tg-cell').forEach(cell=>{
-    const ds=cell.dataset.date;
-    const h=parseInt(cell.dataset.hour);
-    if(ds===dragState.startDate&&h>=minH&&h<=maxH){
-      cell.style.background='rgba(108,63,197,.2)';
-    }
-  });
-}
-
-function clearDragHighlight(){
-  document.querySelectorAll('.tg-cell').forEach(cell=>{
-    cell.style.background='';
-  });
-}
-
-// Global mouseup to cancel drag if released outside grid
-document.addEventListener('mouseup',()=>{
-  if(dragState&&dragState.active){
-    dragState.active=false;
-    clearDragHighlight();
-    dragState=null;
+  const rem=42-(first+total);
+  for(let i=1;i<=rem;i++){
+    html+=calCell(new Date(calYear,calMonth+1,i),true,today);
   }
-});
-
-function coversHour(b,dateStr,hour){
-  // A booking covers a date+hour if:
-  // startDate+startHour <= dateStr+hour < endDate+endHour
-  const bStart=b.startDate+pad(b.startHour||0);
-  const bEnd=b.endDate+pad(b.endHour||24);
-  const cell=dateStr+pad(hour);
-  return cell>=bStart&&cell<bEnd;
+  grid.innerHTML=html;
 }
 
-// ═══════════════════════════════════
+function calCell(dt,dim,today){
+  const ds=fmtDate(dt);
+  const isToday=ds===today;
+  const bks=bksForDate(ds);
+  const dnClass=isToday?' style="background:var(--blue);color:#fff;border-radius:50%"':'';
+  let chips='';
+  bks.slice(0,2).forEach(b=>{
+    const e=eqById(b.equipment);
+    const cat=e?e.cat:'outro';
+    const eqShort=eqName(b.equipment).replace('ÄKTA ','').replace('Superdex ','Sdx ').replace('Superose ','Srose ').replace('Shaker ','').replace('Termociclador ','TC ').replace('PEAQ-ITC','ITC');
+    const label=b.comboColumn&&b.comboColumn!=='_cromatografia'?eqShort+'+':eqShort;
+    const evCls=b.bookingType==='manutencao'?'ev-manut':evClass(cat);
+    const userShort=b.user.split(' ')[0];
+    const evLabel=b.bookingType==='manutencao'?('🔧 '+userShort):(userShort+': '+label);
+    const tooltip=b.user+' — '+eqName(b.equipment)+(b.protein?' ('+b.protein+')':'');
+    chips+=`<div class="ev ${evCls}" title="${tooltip}">${evLabel}</div>`;
+  });
+  if(bks.length>2) chips+=`<div class="ev-more">+${bks.length-2}</div>`;
+  // Click opens day popup; if no bookings, goes straight to new booking
+  const clickFn = bks.length>0 ? `openDayPopup('${ds}')` : `openNew('${ds}')`;
+  return `<div class="cal-cell${dim?' dim':''}" onclick="${clickFn}"><div class="day-n"${dnClass}>${dt.getDate()}</div>${chips}</div>`;
+}
+
+// ═══════════════════════════════════════════════════
 // BOOKING MODAL
-// ═══════════════════════════════════
-function openNew(date,hour,endHour){
-  editingId=null;bookingType='experimento';
+// ═══════════════════════════════════════════════════
+function openNew(date){
+  editingId=null;
+  selectedPeriod=null;
   document.getElementById('modal-title').textContent='Nova reserva';
   document.getElementById('del-btn').style.display='none';
   document.getElementById('conflict-alert').style.display='none';
   document.getElementById('bk-notes').value='';
+  document.getElementById('bk-user2').value='';
+  document.getElementById('bk-inst').value='';
   document.getElementById('bk-protein').value='';
-  document.getElementById('bk-read-type').value='';
-  document.getElementById('bk-plate').value='';
-  document.getElementById('bk-phone').value=currentUser.phone||'';
-  document.getElementById('bk-lab').value=currentUser.lab||'';
+  document.getElementById('bk-erlens').value='';
+  document.getElementById('bk-volume').value='';
+  document.getElementById('bk-temp1').value='';
+  document.getElementById('bk-temp2').value='';
+  document.getElementById('bk-tempchange').value='22:00';
+  document.getElementById('bk-overnight').checked=false;
+  if(document.getElementById('bk-endtime')) document.getElementById('bk-endtime').value='09:00';
+  if(document.getElementById('bk-enddate')){
+    // Default end date = day after start
+    const tomorrow=new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    document.getElementById('bk-enddate').value=fmtDate(tomorrow);
+  }
+  if(document.getElementById('exp-duration-label')) document.getElementById('exp-duration-label').textContent='';
+  document.getElementById('overnight-fields').style.display='none';
+  document.getElementById('shaker-section').style.display='none';
+  const equilCb=document.getElementById('bk-equil-on');
+  if(equilCb){ equilCb.checked=false; }
+  const equilInfo=document.getElementById('equil-on-info');
+  if(equilInfo){ equilInfo.style.display='none'; }
+  if(document.getElementById('bk-shaker-start-date')) document.getElementById('bk-shaker-start-date').value='';
+  if(document.getElementById('bk-shaker-start-time')) document.getElementById('bk-shaker-start-time').value='09:00';
+  const pg=document.getElementById('period-grid'); if(pg) pg.style.display='flex';
+  const sts=document.getElementById('shaker-time-section'); if(sts) sts.style.display='none';
   const d=date||fmtDate(new Date());
-  document.getElementById('bk-start-date').value=d;
-  document.getElementById('bk-end-date').value=d;
-  document.getElementById('bk-start-hour').value=hour!=null?hour:8;
-  // If dragged, use endHour; if clicked single cell, use hour+1
-  document.getElementById('bk-end-hour').value=endHour!=null?endHour:(hour!=null?(hour+1)%24:12);
-  setType('experimento');
+  document.getElementById('bk-date').value=d;
+  document.getElementById('bk-date-display').value=fmtBR(d);
+  document.querySelectorAll('.period-pill').forEach(p=>p.classList.remove('sel'));
+  document.getElementById('custom-time').style.display='none';
+  document.getElementById('multiday-dates').style.display='none';
   populateUserSelect();
-  updateDurationLabel();
+  document.getElementById('combo-section').style.display='none';
+  document.getElementById('col-period-section').style.display='none';
+  selectedColPeriod=null;
+  bookingType='experimento';
+  setBookingType('experimento');
   show('booking-modal');
+  // Populate and trigger eq change AFTER modal is visible
+  const s=document.getElementById('bk-eq');
+  s.innerHTML=EQ.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  onEqChange();
 }
 
 function openEdit(id){
   const b=bookings.find(x=>x.id===id);
   if(!b)return;
-  if(b.user!==currentUser.name&&!currentUser.isAdmin){alert('Só o dono ou um admin pode editar.');return;}
-  editingId=id;bookingType=b.bookingType||'experimento';
+  // Only owner or admin can edit
+  if(b.user!==currentUser.name && !currentUser.isAdmin){
+    alert('Só o dono da reserva ou um admin pode editá-la.');
+    return;
+  }
+  editingId=id;
+  bookingType=b.bookingType||'experimento';
+  setBookingType(bookingType);
+  selectedPeriod=b.period;
   document.getElementById('modal-title').textContent='Editar reserva';
   document.getElementById('del-btn').style.display='block';
   document.getElementById('conflict-alert').style.display='none';
-  document.getElementById('bk-start-date').value=b.startDate;
-  document.getElementById('bk-end-date').value=b.endDate;
-  document.getElementById('bk-start-hour').value=b.startHour||0;
-  document.getElementById('bk-end-hour').value=b.endHour||0;
-  document.getElementById('bk-notes').value=b.notes||'';
-  document.getElementById('bk-protein').value=b.protein||'';
-  document.getElementById('bk-read-type').value=b.readType||'';
-  document.getElementById('bk-plate').value=b.plate||'';
-  document.getElementById('bk-lab').value=b.lab||'';
-  document.getElementById('bk-phone').value=b.phone||'';
-  setType(bookingType);
+  document.getElementById('bk-date').value=b.date;
+  document.getElementById('bk-date-display').value=fmtBR(b.date);
+  document.querySelectorAll('.period-pill').forEach(p=>{
+    p.classList.toggle('sel',p.dataset.p===b.period);
+  });
+  document.getElementById('custom-time').style.display=b.period==='custom'?'block':'none';
+  document.getElementById('multiday-dates').style.display=b.period==='multidias'?'block':'none';
+  if(b.period==='custom'){
+    document.getElementById('bk-start').value=b.startTime||'08:00';
+    document.getElementById('bk-end').value=b.endTime||'12:00';
+  }
+  if(b.period==='multidias'){
+    document.getElementById('bk-date-start').value=b.dateStart||b.date;
+    document.getElementById('bk-date-end').value=b.dateEnd||b.date;
+  }
+  populateEqSelect(b.equipment, b.comboColumn, b.colPeriod);
   populateUserSelect(b.user);
-  updateDurationLabel();
+  document.getElementById('bk-notes').value=b.notes||'';
+  document.getElementById('bk-user2').value=b.user2||'';
+  document.getElementById('bk-inst').value=b.institution||'';
+  document.getElementById('bk-protein').value=b.protein||'';
+  document.getElementById('bk-erlens').value=b.shakerErlens||'';
+  document.getElementById('bk-volume').value=b.shakerVolume||'';
+  document.getElementById('bk-temp1').value=b.shakerTemp1||'';
+  document.getElementById('bk-temp2').value=b.shakerTemp2||'';
+  document.getElementById('bk-tempchange').value=b.shakerTempChange||'22:00';
+  if(document.getElementById('bk-endtime')) document.getElementById('bk-endtime').value=b.shakerEndTime||'09:00';
+  if(document.getElementById('bk-enddate')) document.getElementById('bk-enddate').value=b.shakerEndDate||'';
+  if(document.getElementById('bk-shaker-start-date')) document.getElementById('bk-shaker-start-date').value=b.shakerStartDate||b.date||'';
+  if(document.getElementById('bk-shaker-start-time')) document.getElementById('bk-shaker-start-time').value=b.startTime||'09:00';
+  const equilCb=document.getElementById('bk-equil-on');
+  if(equilCb){ equilCb.checked=!!b.equilON; toggleEquilON(equilCb); }
+  calcExpDuration();
+  const isON=!!b.shakerOvernight;
+  document.getElementById('bk-overnight').checked=isON;
+  document.getElementById('overnight-fields').style.display=isON?'block':'none';
+  if(b.comboColumn&&b.colPeriod==='multidias'){
+    document.getElementById('bk-col-date-start').value=b.colDateStart||b.date;
+    document.getElementById('bk-col-date-end').value=b.colDateEnd||b.date;
+  }
+  selectedColPeriod=b.colPeriod||null;
   show('booking-modal');
 }
 
-function setType(type){
-  bookingType=type;
-  document.getElementById('tb-exp').className='type-btn'+(type==='experimento'?' sel-exp':'');
-  document.getElementById('tb-manut').className='type-btn'+(type==='manutencao'?' sel-manut':'');
-  document.getElementById('manut-banner').style.display=type==='manutencao'?'block':'none';
-  document.getElementById('exp-fields').style.display=type==='experimento'?'block':'none';
+function selPeriod(el){
+  document.querySelectorAll('.period-pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedPeriod=el.dataset.p;
+  document.getElementById('custom-time').style.display=selectedPeriod==='custom'?'block':'none';
+  document.getElementById('multiday-dates').style.display=selectedPeriod==='multidias'?'block':'none';
+  document.getElementById('conflict-alert').style.display='none';
+  // For multidias, prefill start date with selected date
+  if(selectedPeriod==='multidias'){
+    const d=document.getElementById('bk-date').value;
+    document.getElementById('bk-date-start').value=d;
+    document.getElementById('bk-date-end').value=d;
+  }
+}
+
+function populateEqSelect(sel, preCol, preColPeriod){
+  const s=document.getElementById('bk-eq');
+  s.innerHTML=EQ.map(e=>`<option value="${e.id}"${e.id===sel?' selected':''}>${e.name}</option>`).join('');
+  onEqChange(preCol, preColPeriod);
 }
 
 function populateUserSelect(sel){
-  const s=document.getElementById('bk-user');
   const selUser=sel||currentUser.name;
-  s.innerHTML=users.map(u=>`<option value="${u.name}"${u.name===selUser?' selected':''}>${u.name}${u.lab?' ('+u.lab+')':''}</option>`).join('');
-  const lock=document.getElementById('bk-user-lock');
-  if(!currentUser.isAdmin){s.value=currentUser.name;s.disabled=true;lock.style.display='block';}
-  else{s.disabled=false;lock.style.display='none';}
+  const s=document.getElementById('bk-user');
+  s.innerHTML=users.map(u=>`<option value="${u.name}"${u.name===selUser?' selected':''}>${u.name}${u.isExternal?' (ext)':''}</option>`).join('');
+  // Non-admins can only book for themselves
+  const note=document.getElementById('bk-user-lock-note');
+  if(!currentUser.isAdmin){
+    s.value=currentUser.name;
+    s.disabled=true;
+    if(note) note.style.display='block';
+  } else {
+    s.disabled=false;
+    if(note) note.style.display='none';
+  }
 }
 
-function syncUserSelect(){
+function syncUserSelects(){
   if(document.getElementById('booking-modal').style.display!=='none'){
     const cur=document.getElementById('bk-user').value;
     populateUserSelect(cur);
   }
 }
 
-function updateDurationLabel(){
-  const sd=document.getElementById('bk-start-date').value;
-  const sh=parseInt(document.getElementById('bk-start-hour').value)||0;
-  const ed=document.getElementById('bk-end-date').value;
-  const eh=parseInt(document.getElementById('bk-end-hour').value)||0;
-  if(!sd||!ed)return;
-  const start=new Date(sd+'T'+pad(sh)+':00');
-  const end=new Date(ed+'T'+pad(eh)+':00');
-  const diffH=Math.round((end-start)/3600000);
-  const label=document.getElementById('duration-label');
-  const warn=document.getElementById('days-warn');
-  if(diffH<=0){label.textContent='';warn.style.display='none';return;}
-  const days=Math.floor(diffH/24);
-  const hrs=diffH%24;
-  label.textContent=`Duração: ${days>0?days+'d ':''} ${hrs>0?hrs+'h':''}`.trim();
-  warn.style.display=diffH>MAX_DAYS*24?'block':'none';
+function toggleEquilON(cb){
+  document.getElementById('equil-on-info').style.display=cb.checked?'block':'none';
 }
 
-['bk-start-date','bk-end-date','bk-start-hour','bk-end-hour'].forEach(id=>{
-  document.addEventListener('change',e=>{if(e.target&&e.target.id===id)updateDurationLabel();});
-});
+function toggleOvernight(cb){
+  document.getElementById('overnight-fields').style.display=cb.checked?'block':'none';
+}
 
-function checkConflict(sd,sh,ed,eh,excId){
-  const newStart=sd+pad(sh);
-  const newEnd=ed+pad(eh);
+function calcExpDuration(){
+  const label=document.getElementById('exp-duration-label');
+  if(!label)return;
+  const startDate=document.getElementById('bk-date')?.value;
+  const startTime=document.getElementById('bk-start')?.value;
+  const endDate=document.getElementById('bk-enddate')?.value;
+  const endTime=document.getElementById('bk-endtime')?.value;
+  if(!startDate||!startTime||!endDate||!endTime){label.textContent='';return;}
+  const start=new Date(startDate+'T'+startTime);
+  const end=new Date(endDate+'T'+endTime);
+  const diffMs=end-start;
+  if(diffMs<=0){label.textContent='⚠️ Data/hora de fim deve ser após o início';label.style.color='var(--red)';return;}
+  label.style.color='var(--text2)';
+  const totalMins=Math.round(diffMs/60000);
+  const h=Math.floor(totalMins/60);
+  const m=totalMins%60;
+  label.textContent=`≈ ${h}h${m?m+'min':''} de expressão`;
+}
+
+function checkShakerCapacity(){
+  const eq=document.getElementById('bk-eq')?.value;
+  const vol=parseFloat(document.getElementById('bk-volume')?.value)||0;
+  const date=document.getElementById('bk-date')?.value;
+  if(!eq||!date||(eq!=='shaker-1'&&eq!=='shaker-2'))return;
+  const bar=document.getElementById('shaker-capacity-bar');
+  if(!bar)return;
+  // Find other bookings for this shaker on this date/period
+  const existing=bookings.filter(b=>b.id!==editingId&&b.equipment===eq&&b.date===date);
+  const usedVol=existing.reduce((sum,b)=>sum+(parseFloat(b.shakerVolume)||0),0);
+  const total=usedVol+vol;
+  const pct=Math.min(100,(total/8)*100);
+  bar.style.display='block';
+  document.getElementById('shaker-cap-text').textContent=`${total.toFixed(1)} / 8L`;
+  const fill=document.getElementById('shaker-cap-fill');
+  fill.style.width=pct+'%';
+  fill.style.background=total>8?'var(--red)':total>6?'var(--amber)':'var(--blue)';
+  const usersEl=document.getElementById('shaker-cap-users');
+  if(existing.length){
+    usersEl.textContent='Já reservado: '+existing.map(b=>`${b.user} (${b.shakerVolume||'?'}L)`).join(', ');
+  } else {
+    usersEl.textContent='Nenhuma outra reserva neste período';
+  }
+}
+
+function onEqChange(preCol, preColPeriod){
+  const id=document.getElementById('bk-eq').value;
+  const e=eqById(id);
+  const isAkta=e&&e.cat==='akta';
+  const isShaker=e&&e.cat==='outro'&&(e.id==='shaker-1'||e.id==='shaker-2');
+  document.getElementById('combo-section').style.display=(isAkta&&bookingType!=='manutencao')?'block':'none';
+  document.getElementById('shaker-section').style.display=isShaker?'block':'none';
+  // For shakers: hide period pills, show dedicated time picker
+  const pg=document.getElementById('period-grid');
+  const sts=document.getElementById('shaker-time-section');
+  if(pg) pg.style.display=isShaker?'none':'flex';
+  if(sts) sts.style.display=isShaker?'block':'none';
+  if(isShaker){
+    // Pre-fill shaker start date from booking date
+    const d=document.getElementById('bk-date')?.value;
+    const ssd=document.getElementById('bk-shaker-start-date');
+    if(d&&ssd&&!ssd.value) ssd.value=d;
+    selectedPeriod='custom'; // treat shaker as custom period
+    setTimeout(checkShakerCapacity, 50);
+  }
+  if(isAkta){
+    const cs=document.getElementById('bk-col');
+    const cols=EQ.filter(x=>x.cat==='coluna');
+    cs.innerHTML=`<option value="">Sem coluna</option><option value="_cromatografia"${preCol==='_cromatografia'?' selected':''}>Só cromatografia (sem coluna SEC)</option>`+cols.map(c=>`<option value="${c.id}"${c.id===preCol?' selected':''}>${c.name}</option>`).join('');
+    onColChange(preColPeriod);
+  }
+}
+
+function onColChange(preColPeriod){
+  const col=document.getElementById('bk-col').value;
+  const sec=document.getElementById('col-period-section');
+  // Only show period section for real columns, not special options
+  sec.style.display=(col&&col!=='_cromatografia')?'block':'none';
+  if(col&&preColPeriod){
+    selectedColPeriod=preColPeriod;
+    document.querySelectorAll('#col-period-grid .period-pill').forEach(p=>{
+      p.classList.toggle('sel',p.dataset.cp===preColPeriod);
+    });
+    document.getElementById('col-multiday-dates').style.display=preColPeriod==='multidias'?'block':'none';
+  } else if(!col){
+    selectedColPeriod=null;
+    document.querySelectorAll('#col-period-grid .period-pill').forEach(p=>p.classList.remove('sel'));
+    document.getElementById('col-multiday-dates').style.display='none';
+  }
+}
+
+function selColPeriod(el){
+  document.querySelectorAll('#col-period-grid .period-pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedColPeriod=el.dataset.cp;
+  document.getElementById('col-multiday-dates').style.display=selectedColPeriod==='multidias'?'block':'none';
+  if(selectedColPeriod==='multidias'){
+    const d=document.getElementById('bk-date').value;
+    document.getElementById('bk-col-date-start').value=d;
+    document.getElementById('bk-col-date-end').value=d;
+  }
+  document.getElementById('conflict-alert').style.display='none';
+}
+
+function periodsOverlap(p1,s1,e1,p2,s2,e2){
+  if(p1==='diatodo'||p2==='diatodo')return true;
+  // multidias means the booking spans multiple days — on shared dates, treat as diatodo
+  if(p1==='multidias'||p2==='multidias')return true;
+  const range={manha:['08:00','12:00'],tarde:['13:00','17:00'],noite:['17:00','22:00']};
+  const toMins=t=>{ const[h,m]=t.split(':').map(Number);return h*60+m; };
+  const r1=p1==='custom'?[s1,e1]:range[p1];
+  const r2=p2==='custom'?[s2,e2]:range[p2];
+  if(!r1||!r2)return p1===p2;
+  return toMins(r1[1])>toMins(r2[0]) && toMins(r2[1])>toMins(r1[0]);
+}
+
+function dateRange(start,end){
+  const dates=[];
+  let cur=new Date(start+'T12:00:00');
+  const last=new Date(end+'T12:00:00');
+  while(cur<=last){ dates.push(fmtDate(cur)); cur.setDate(cur.getDate()+1); }
+  return dates;
+}
+
+function getEffectiveDates(period, mainDate, dateStart, dateEnd){
+  return period==='multidias' ? dateRange(dateStart,dateEnd) : [mainDate];
+}
+function getEffectivePeriod(period, colPeriod){
+  // 'mesmo' means use the AKTA's period
+  return (colPeriod&&colPeriod!=='mesmo') ? colPeriod : period;
+}
+
+function checkConflict(date,period,s,e,eq,col,excId,dateStart,dateEnd,colPeriod,colDateStart,colDateEnd){
+  const aktaDates = getEffectiveDates(period,date,dateStart,dateEnd);
+  // Effective column period
+  const effColPeriod = col ? getEffectivePeriod(period,colPeriod) : null;
+  const colDates = col ? getEffectiveDates(
+    effColPeriod, date,
+    (colPeriod==='multidias')?colDateStart:dateStart,
+    (colPeriod==='multidias')?colDateEnd:dateEnd
+  ) : [];
+
   for(const b of bookings){
     if(b.id===excId)continue;
-    const bStart=b.startDate+pad(b.startHour||0);
-    const bEnd=b.endDate+pad(b.endHour||24);
-    // Overlap if newStart < bEnd AND newEnd > bStart
-    if(newStart<bEnd&&newEnd>bStart)
-      return `Conflito com reserva de ${b.user}${b.lab?' ('+b.lab+')':''}.`;
+    const bAktaDates = getEffectiveDates(b.period,b.date,b.dateStart,b.dateEnd);
+    const bEffColPeriod = b.comboColumn ? getEffectivePeriod(b.period,b.colPeriod) : null;
+    const bColDates = b.comboColumn ? getEffectiveDates(
+      bEffColPeriod||b.period, b.date,
+      (b.colPeriod==='multidias')?b.colDateStart:b.dateStart,
+      (b.colPeriod==='multidias')?b.colDateEnd:b.dateEnd
+    ) : [];
+
+    // Check AKTA vs AKTA conflict
+    const aktaDateOverlap = aktaDates.some(d=>bAktaDates.includes(d));
+    if(aktaDateOverlap && periodsOverlap(period,s,e,b.period,b.startTime,b.endTime)){
+      if(b.equipment===eq) return `${eqName(eq)} já reservado neste período por ${b.user}.`;
+    }
+
+    // Check column conflicts (use column's own period/dates)
+    if(col){
+      // New col vs existing AKTA's col
+      if(b.comboColumn===col){
+        const bcp=bEffColPeriod||b.period;
+        const colDateOvlp=colDates.some(d=>bColDates.includes(d));
+        if(colDateOvlp&&periodsOverlap(effColPeriod,s,e,bcp,b.startTime,b.endTime))
+          return `${eqName(col)} já está reservada neste período por ${b.user}.`;
+      }
+      // New col vs existing standalone col booking
+      if(b.equipment===col){
+        const colDateOvlp=colDates.some(d=>bAktaDates.includes(d));
+        if(colDateOvlp&&periodsOverlap(effColPeriod,s,e,b.period,b.startTime,b.endTime))
+          return `${eqName(col)} já reservada neste período por ${b.user}.`;
+      }
+    }
+
+    // Check if new booking is a column and conflicts with existing
+    const eObj=eqById(eq);
+    if(eObj&&eObj.cat==='coluna'){
+      if(b.equipment===eq){
+        if(aktaDateOverlap&&periodsOverlap(period,s,e,b.period,b.startTime,b.endTime))
+          return `${eqName(eq)} já reservada neste período por ${b.user}.`;
+      }
+      if(b.comboColumn===eq){
+        const bcp=bEffColPeriod||b.period;
+        const aktaColDateOvlp=aktaDates.some(d=>bColDates.includes(d));
+        if(aktaColDateOvlp&&periodsOverlap(period,s,e,bcp,b.startTime,b.endTime))
+          return `${eqName(eq)} já está vinculada a ${eqName(b.equipment)} por ${b.user}.`;
+      }
+    }
   }
   return null;
 }
 
 async function saveBooking(){
-  const sd=document.getElementById('bk-start-date').value;
-  const sh=parseInt(document.getElementById('bk-start-hour').value)||0;
-  const ed=document.getElementById('bk-end-date').value;
-  const eh=parseInt(document.getElementById('bk-end-hour').value)||0;
+  const date=document.getElementById('bk-date').value;
+  const eq=document.getElementById('bk-eq').value;
   const user=document.getElementById('bk-user').value;
-  const lab=document.getElementById('bk-lab').value.trim();
-  const phone=document.getElementById('bk-phone').value.trim();
   const notes=document.getElementById('bk-notes').value.trim();
-  const protein=document.getElementById('bk-protein').value.trim();
-  const readType=document.getElementById('bk-read-type').value;
-  const plate=document.getElementById('bk-plate').value;
+  const user2=document.getElementById('bk-user2').value.trim()||null;
+  const institution=document.getElementById('bk-inst').value.trim()||null;
+  const protein=document.getElementById('bk-protein').value.trim()||null;
+  const bkEqEl=document.getElementById('bk-eq'); const eqObj=bkEqEl?eqById(bkEqEl.value):null;
+  const isShaker=eqObj&&(eqObj.id==='shaker-1'||eqObj.id==='shaker-2');
+  const shakerErlens=isShaker?document.getElementById('bk-erlens').value||null:null;
+  const shakerEndTime=isShaker?document.getElementById('bk-endtime')?.value||null:null;
+  const shakerEndDate=isShaker?document.getElementById('bk-enddate')?.value||null:null;
+  const shakerVolume=isShaker?document.getElementById('bk-volume').value||null:null;
+  const shakerTemp1=isShaker?document.getElementById('bk-temp1').value||null:null;
+  const shakerOvernight=isShaker?document.getElementById('bk-overnight').checked:false;
+  const shakerTemp2=shakerOvernight?document.getElementById('bk-temp2').value||null:null;
+  const shakerTempChange=shakerOvernight?document.getElementById('bk-tempchange').value||null:null;
+  const e=eqById(eq);
+  const col=(e&&e.cat==='akta')?document.getElementById('bk-col').value||null:null;
+  const st=document.getElementById('bk-start').value;
+  const en=document.getElementById('bk-end').value;
+  const dateStart=document.getElementById('bk-date-start').value;
+  const dateEnd=document.getElementById('bk-date-end').value;
+  const colDateStart=document.getElementById('bk-col-date-start').value;
+  const colDateEnd=document.getElementById('bk-col-date-end').value;
 
-  if(!sd||!ed){showConflict('⚠️ Informe as datas de início e fim.');return;}
-  if(!lab){showConflict('⚠️ Informe o laboratório.');return;}
-  const newStart=new Date(sd+'T'+pad(sh)+':00');
-  const newEnd=new Date(ed+'T'+pad(eh)+':00');
-  if(newEnd<=newStart){showConflict('⚠️ Data/hora de fim deve ser após o início.');return;}
+  // Define mainDate early — needed for capacity check
+  const mainDate = selectedPeriod==='multidias' ? dateStart : date;
 
-  const conflict=checkConflict(sd,sh,ed,eh,editingId);
-  if(conflict){showConflict(conflict);return;}
-
-  // Check user hour limit for new bookings
-  let isPending=false;
-  if(!editingId&&bookingType==='experimento'){
-    const bUser=users.find(u=>u.name===user);
-    if(bUser){
-      const newStart=new Date(sd+'T'+pad(sh)+':00');
-      const newEnd=new Date(ed+'T'+pad(eh)+':00');
-      const newHours=(newEnd-newStart)/3600000;
-      const usedHours=getUserHoursThisMonth(bUser.id);
-      const limitHours=getUserLimit(bUser.id);
-      if(usedHours+newHours>limitHours){
-        const remaining=Math.max(0,limitHours-usedHours).toFixed(1);
-        if(!confirm(`⚠️ Limite mensal: ${usedHours.toFixed(1)}h usadas de ${limitHours}h.
-Esta reserva usa mais ${newHours.toFixed(1)}h (restam ${remaining}h).
-
-A reserva será salva como PENDENTE e precisará de aprovação do admin.
-
-Deseja continuar?`)){return;}
-        isPending=true;
-      }
+  if(!selectedPeriod){ showConflict('⚠️ Selecione o período da reserva antes de salvar.'); return; }
+  if(selectedPeriod==='custom'&&st>=en){ showConflict('⚠️ O horário de início deve ser anterior ao horário de fim.'); return; }
+  if(selectedPeriod==='multidias'&&(!dateStart||!dateEnd)){ showConflict('⚠️ Informe a data de início e a data de fim para reservas de múltiplos dias.'); return; }
+  if(selectedPeriod==='multidias'&&dateEnd<dateStart){ showConflict('⚠️ A data de fim deve ser posterior à data de início.'); return; }
+  if(col&&col!=='_cromatografia'&&!selectedColPeriod){ showConflict('⚠️ Você selecionou uma coluna — escolha também o período de uso dela.'); return; }
+  // Shaker capacity warning
+  if(isShaker&&shakerVolume){
+    const existingVol=bookings.filter(b=>b.id!==editingId&&b.equipment===eqObj?.id&&b.date===mainDate).reduce((s,b)=>s+(parseFloat(b.shakerVolume)||0),0);
+    if(existingVol+parseFloat(shakerVolume)>8){
+      if(!confirm(`⚠️ Volume total (${(existingVol+parseFloat(shakerVolume)).toFixed(1)}L) excede a capacidade de 8L do shaker. Deseja salvar mesmo assim?`))return;
     }
   }
+  if(col&&selectedColPeriod==='multidias'&&(!colDateStart||!colDateEnd)){ showConflict('⚠️ Informe as datas de uso da coluna.'); return; }
 
-  const btn=document.getElementById('save-btn');
-  btn.textContent='Salvando...';btn.disabled=true;
+  const conflict=checkConflict(date,selectedPeriod,st,en,eq,col,editingId,dateStart,dateEnd,selectedColPeriod,colDateStart,colDateEnd);
+  if(conflict){ showConflict(conflict); return; }
+
+  // Warn if column near/at usage limit
+  const colsToCheck=[];
+  const mainEqObj=eqById(eq);
+  if(mainEqObj&&mainEqObj.cat==='coluna') colsToCheck.push(eq);
+  if(col&&col!=='_cromatografia') colsToCheck.push(col);
+  for(const cid of colsToCheck){
+    const cs=getColStatus(cid);
+    if(cs.status==='danger'){
+      if(!confirm(`⚠️ A coluna "${eqName(cid)}" atingiu o limite de ${cs.limit} usos e pode precisar de limpeza.
+
+Deseja reservar mesmo assim?`))return;
+    } else if(cs.status==='warn'){
+      if(!confirm(`⚠️ A coluna "${eqName(cid)}" está em ${cs.uses}/${cs.limit} usos (${cs.pct}%).
+
+Deseja continuar?`))return;
+    }
+  }
+  const data={
+    date:mainDate,
+    bookingType:bookingType,
+    period:selectedPeriod,
+    dateStart:selectedPeriod==='multidias'?dateStart:null,
+    dateEnd:selectedPeriod==='multidias'?dateEnd:null,
+    startTime:st,endTime:en,
+    equipment:eq,
+    comboColumn:col||null,
+    equilON:document.getElementById('bk-equil-on')?.checked||false,
+    shakerStartDate:isShaker?document.getElementById('bk-shaker-start-date')?.value||null:null,
+    colPeriod:col?selectedColPeriod:null,
+    colDateStart:col&&selectedColPeriod==='multidias'?colDateStart:null,
+    colDateEnd:col&&selectedColPeriod==='multidias'?colDateEnd:null,
+    user,user2:user2||null,institution:institution||null,protein:protein||null,shakerErlens,shakerVolume,shakerTemp1,shakerOvernight:shakerOvernight||false,shakerTemp2,shakerTempChange,shakerEndTime:shakerEndTime||null,shakerEndDate:shakerEndDate||null,notes,
+    updatedAt:new Date().toISOString()
+  };
+  const saveBtn=document.getElementById('save-btn');
+  saveBtn.textContent='Salvando...';
+  saveBtn.disabled=true;
   try{
-    const data={startDate:sd,startHour:sh,endDate:ed,endHour:eh,bookingType,user,lab,phone:phone||null,protein:protein||null,readType:readType||null,plate:plate||null,notes:notes||null,pending:isPending,updatedAt:new Date().toISOString()};
     if(editingId){
       await db.collection('bookings').doc(editingId).update(data);
-    }else{
+    } else {
       data.createdAt=new Date().toISOString();
       await db.collection('bookings').add(data);
-      if(bookingType==='experimento'){
-        await incrementUsage();
-        // Add hours to user counter
-        const bUser=users.find(u=>u.name===user);
-        if(bUser){
-          const newStart=new Date(sd+'T'+pad(sh)+':00');
-          const newEnd=new Date(ed+'T'+pad(eh)+':00');
-          const newHours=(newEnd-newStart)/3600000;
-          await addHoursToUser(bUser.id,newHours);
-        }
+      // Increment column use counter for new bookings only
+      const colsUsed=[];
+      const eqObjSave=eqById(eq);
+      if(eqObjSave&&eqObjSave.cat==='coluna') colsUsed.push(eq);
+      if(col&&col!=='_cromatografia') colsUsed.push(col);
+      for(const cid of colsUsed){
+        await incrementColUse(cid);
       }
     }
     closeModal();
-  }catch(err){showConflict('Erro: '+err.message);}
-  finally{btn.textContent='Salvar';btn.disabled=false;}
+  }catch(err){
+    showConflict('Erro ao salvar: '+err.message);
+  }finally{
+    saveBtn.textContent='Salvar reserva';
+    saveBtn.disabled=false;
+  }
 }
 
 async function deleteBooking(){
   if(!editingId)return;
-  if(!confirm('Excluir reserva?'))return;
-  await db.collection('bookings').doc(editingId).delete();
-  closeModal();
+  if(!confirm('Excluir esta reserva? Esta ação não pode ser desfeita.'))return;
+  const btn=document.getElementById('del-btn');
+  btn.textContent='Excluindo...';
+  btn.disabled=true;
+  // Timeout de 10s para nunca ficar travado
+  const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Tempo esgotado. Verifique sua conexão e tente novamente.')),10000));
+  try{
+    const b=bookings.find(x=>x.id===editingId);
+    await Promise.race([db.collection('bookings').doc(editingId).delete(), timeout]);
+    // Decrement column counter only for future bookings
+    if(b){
+      const today=fmtDate(new Date());
+      const bookingDate=b.date||b.dateStart||'';
+      if(bookingDate>=today){
+        const colsToDecrement=[];
+        const eqObj=eqById(b.equipment);
+        if(eqObj&&eqObj.cat==='coluna') colsToDecrement.push(b.equipment);
+        if(b.comboColumn&&b.comboColumn!=='_cromatografia') colsToDecrement.push(b.comboColumn);
+        for(const cid of colsToDecrement){
+          try{ await decrementColUse(cid); }catch(e){ console.warn('decrementColUse:',e); }
+        }
+      }
+    }
+    closeModal();
+  }catch(err){
+    alert('Erro ao excluir: '+err.message);
+  }finally{
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg> Excluir';
+    btn.disabled=false;
+  }
+}
+
+async function decrementColUse(colId){
+  const ref=db.collection('colCounters').doc(colId);
+  const snap=await ref.get();
+  if(!snap.exists)return;
+  const cur=snap.data().uses||0;
+  if(cur>0) await ref.update({uses:cur-1});
 }
 
 function showConflict(msg){
   const el=document.getElementById('conflict-alert');
-  el.innerHTML=`<div class="alert alert-danger">${msg}</div>`;
+  // Remove leading ⚠️ if already in msg to avoid duplication
+  const clean=msg.replace(/^⚠️\s*/,'');
+  el.innerHTML=`<div class="alert alert-danger" style="line-height:1.5">⚠️ ${clean}</div>`;
   el.style.display='block';
   el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-function closeModal(){hide('booking-modal');editingId=null;}
 
-// ═══════════════════════════════════
-// RESERVAS LIST
-// ═══════════════════════════════════
-let _st=null;
-function debounceSearch(){clearTimeout(_st);_st=setTimeout(renderReservas,250);}
-
-function selFP(el,v){
-  document.querySelectorAll('#panel-reservas .btn-sm').forEach(b=>b.style.cssText='');
-  el.style.borderColor='var(--purple)';el.style.color='var(--purple)';
-  activeFP=v;renderReservas();
+function closeModal(){
+  hide('booking-modal');
+  editingId=null; selectedPeriod=null; selectedColPeriod=null; bookingType='experimento';
+  // Reset date field to readonly display mode
+  const picker=document.getElementById('bk-date-picker');
+  const disp=document.getElementById('bk-date-display');
+  if(picker){ picker.style.display='none'; }
+  if(disp){ disp.style.display=''; }
 }
 
+// ═══════════════════════════════════════════════════
+// RESERVAS LIST
+// ═══════════════════════════════════════════════════
 function populateFilters(){
-  const fu=document.getElementById('f-user');
-  if(fu.options.length>1)return;
-  users.forEach(u=>{const o=document.createElement('option');o.value=u.name;o.textContent=u.name+(u.lab?' ('+u.lab+')':'');fu.appendChild(o);});
+  const fe=document.getElementById('f-eq');
+  if(fe.options.length>1) return;
+  EQ.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name;fe.appendChild(o);});
 }
 
 function renderReservas(){
-  const uF=document.getElementById('f-user').value;
-  const lF=document.getElementById('f-lab').value;
+  // Sync user filter options with current users list
+  const fu=document.getElementById('f-user');
+  const curFu=fu.value;
+  fu.innerHTML='<option value="">Todos os usuários</option>'+users.map(u=>`<option value="${u.name}"${u.name===curFu?' selected':''}>${u.name}</option>`).join('');
+  const eqF=document.getElementById('f-eq').value;
+  const uF=fu.value;
   const sF=document.getElementById('f-search').value.toLowerCase();
   const today=fmtDate(new Date());
+  const weekEnd=fmtDate(new Date(Date.now()+7*864e5));
+  const monthEnd=fmtDate(new Date(new Date().getFullYear(),new Date().getMonth()+1,0));
+  let bks=[...bookings].sort((a,b)=>b.date.localeCompare(a.date));
+  if(eqF) bks=bks.filter(b=>b.equipment===eqF||b.comboColumn===eqF);
+  if(uF) bks=bks.filter(b=>b.user===uF);
+  if(sF) bks=bks.filter(b=>JSON.stringify(b).toLowerCase().includes(sF));
+  if(activePeriodFilter==='past') bks=bks.filter(b=>b.date<today);
+  else if(activePeriodFilter==='today') bks=bks.filter(b=>b.date===today);
+  else if(activePeriodFilter==='week') bks=bks.filter(b=>b.date>=today&&b.date<=weekEnd);
+  else if(activePeriodFilter==='month') bks=bks.filter(b=>b.date>=today&&b.date<=monthEnd);
+  else if(activePeriodFilter==='future') bks=bks.filter(b=>b.date>today);
+  else if(activePeriodFilter==='manut') bks=bks.filter(b=>b.bookingType==='manutencao');
 
-  // Sync lab filter
-  const fl=document.getElementById('f-lab');
-  const curL=fl.value;
-  const labs=new Set(bookings.map(b=>b.lab).filter(Boolean));
-  fl.innerHTML='<option value="">Todos os laboratórios</option>'+[...labs].sort().map(l=>`<option value="${l}"${l===curL?' selected':''}>${l}</option>`).join('');
 
-  let bks=[...bookings].sort((a,b)=>(b.startDate+pad(b.startHour||0)).localeCompare(a.startDate+pad(a.startHour||0)));
-  if(uF)bks=bks.filter(b=>b.user===uF);
-  if(lF)bks=bks.filter(b=>b.lab===lF);
-  if(sF)bks=bks.filter(b=>JSON.stringify(b).toLowerCase().includes(sF));
-  if(activeFP==='future')bks=bks.filter(b=>b.endDate>=today);
-  else if(activeFP==='past')bks=bks.filter(b=>b.endDate<today);
-  else if(activeFP==='manut')bks=bks.filter(b=>b.bookingType==='manutencao');
 
   const list=document.getElementById('reservas-list');
-  if(!bks.length){list.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text2)">Nenhuma reserva encontrada.</div>`;return;}
+  if(!bks.length){
+    const filterDesc=eqF?` para ${eqName(eqF)}`:'';
+    list.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;opacity:.4"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p>Nenhuma reserva encontrada${filterDesc}</p><p style="font-size:12px;margin-top:4px">Tente mudar os filtros ou <a href="#" onclick="event.preventDefault();switchTabById('calendar')">veja o calendário</a></p></div>`;
+    return;
+  }
+  const pl={manha:'Manhã',tarde:'Tarde',noite:'Noite',diatodo:'Dia todo',multidias:'Mais de um dia',custom:'Horário esp.'};
   list.innerHTML=bks.map(b=>{
-    const dur=getDuration(b);
-    return`<div class="reserva-item" onclick="openEdit('${b.id}')" style="${b.bookingType==='manutencao'?'border-left:3px solid var(--amber)':''}">
+    const e=eqById(b.equipment);
+    const cat=e?e.cat:'outro';
+    const colInfo=b.comboColumn?(b.comboColumn==='_cromatografia'?'<span class="badge badge-other" style="font-size:10px">Só cromatografia</span>':`<span class="badge badge-col" style="font-size:10px">+ ${eqName(b.comboColumn)}${b.equilON?' 🌙ON':''}  </span>`):'';
+    let time;
+    if(b.period==='custom') time=`${b.startTime}–${b.endTime}`;
+    else if(b.period==='multidias'&&b.dateStart&&b.dateEnd) time=`${fmtBR(b.dateStart)} até ${fmtBR(b.dateEnd)}`;
+    else time=pl[b.period]||b.period;
+    let colTime='';
+    if(b.comboColumn&&b.colPeriod&&b.colPeriod!=='mesmo'){
+      if(b.colPeriod==='multidias'&&b.colDateStart&&b.colDateEnd)
+        colTime=` · Coluna: ${fmtBR(b.colDateStart)}–${fmtBR(b.colDateEnd)}`;
+      else colTime=` · Coluna: ${pl[b.colPeriod]||b.colPeriod}`;
+    }
+    const isManut=b.bookingType==='manutencao';
+    return `<div class="reserva-item" onclick="openEdit('${b.id}')" style="${isManut?'border-left:3px solid #BA7517':''}">
       <div class="ri-top">
-        ${b.bookingType==='manutencao'?'<span class="badge badge-manut">🔧 Manutenção</span>':'<span class="badge badge-exp">🔬 Experimento</span>'}
-        ${b.readType?`<span style="font-size:11px;color:var(--text2)">${b.readType}</span>`:''}
-        <span style="font-size:12px;font-weight:600;margin-left:auto">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h → ${fmtBR(b.endDate)} ${pad(b.endHour||0)}h</span>
+        ${isManut?'<span class="badge badge-manut">🔧 Manutenção</span>':''}
+        <span class="badge ${eqBadge(cat)||'badge-other'}">${eqName(b.equipment)}</span>
+        ${colInfo}
+        <span class="ri-date">${fmtBR(b.date)}</span>
       </div>
-      ${b.protein?`<div style="margin-bottom:3px"><span style="font-size:11px;background:var(--teal-light);color:var(--teal);padding:2px 7px;border-radius:4px">🧪 ${b.protein}</span></div>`:''}
-      <div class="ri-info">👤 ${b.user}${b.lab?' · <strong>'+b.lab+'</strong>':''} · ${dur}${b.notes?' · <em>'+b.notes+'</em>':''}</div>
+      ${b.protein?`<div style="margin-bottom:3px"><span class="protocol-badge">🧪 ${b.protein}</span></div>`:''}
+      ${b.shakerErlens||b.shakerTemp1?`<div style="margin-bottom:3px">${b.shakerErlens?`<span class="badge-shaker">🧫 ${b.shakerErlens} erlens</span> `:''}${b.shakerVolume?`<span class="badge-shaker">${b.shakerVolume}L</span> `:''}${b.shakerTemp1?`<span class="badge-shaker">${b.shakerTemp1}°C</span> `:''}${b.shakerOvernight&&b.shakerTemp2?`<span class="badge-shaker">→ ${b.shakerTemp2}°C ON</span>`:''}${b.shakerEndTime?`<span class="badge-shaker">até ${b.shakerEndDate?fmtBR(b.shakerEndDate)+' ':''} ${b.shakerEndTime}</span>`:''}</div>`:''}
+      <div class="ri-info">${svgUser()} ${b.user}${b.user2?` + ${b.user2}`:''}${b.institution?` <span class="badge-ext">${b.institution}</span>`:''} · ${time}${colTime}${b.notes?` · <em>${b.notes}</em>`:''}</div>
     </div>`;
   }).join('');
 }
 
-function getDuration(b){
-  const start=new Date(b.startDate+'T'+pad(b.startHour||0)+':00');
-  const end=new Date(b.endDate+'T'+pad(b.endHour||0)+':00');
-  const h=Math.round((end-start)/3600000);
-  if(h<=0)return'';
-  const d=Math.floor(h/24);const hr=h%24;
-  return(d>0?d+'d ':'')+( hr>0?hr+'h':'');
-}
-
-// ═══════════════════════════════════
-// STATUS
-// ═══════════════════════════════════
-function renderStatus(){renderUsage();renderUpcoming();}
-
-function renderUsage(){
-  const el=document.getElementById('usage-section');
-  const uses=usage.uses||0;
-  const limit=usage.limit||200;
-  const pct=Math.min(100,Math.round((uses/limit)*100));
-  const status=uses>=limit?'danger':uses>=(limit*0.8)?'warn':'ok';
-  const barColor=status==='danger'?'var(--red)':status==='warn'?'var(--amber)':'var(--purple)';
-  el.innerHTML=`
-    <div class="usage-wrap">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <strong style="font-size:14px">📊 Contador de usos — Varioskan Lux</strong>
-        ${currentUser?.isAdmin?`<button class="btn btn-sm" onclick="resetUsage()">🔄 Resetar</button>`:''}
-      </div>
-      <div style="font-size:32px;font-weight:700;color:${barColor}">${uses} <span style="font-size:14px;color:var(--text2);font-weight:400">de ${limit} usos</span></div>
-      <div class="usage-bar-track"><div class="usage-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2)"><span>${pct}% utilizado</span><span>${limit-uses} restantes</span></div>
-      ${status==='danger'?`<div class="alert alert-danger" style="margin-top:8px">⚠️ Limite atingido! Verificação recomendada.</div>`:''}
-      ${status==='warn'?`<div class="alert alert-warn" style="margin-top:8px">⚠ Próximo do limite.</div>`:''}
-      ${usage.lastReset?`<div style="font-size:11px;color:var(--text3);margin-top:8px">Último reset: ${fmtBR(usage.lastReset.split('T')[0])} por ${usage.lastResetBy||'—'}</div>`:''}
-      ${currentUser?.isAdmin?`<div style="margin-top:10px"><button class="btn btn-sm" onclick="setUsageLimit()">⚙ Ajustar limite</button></div>`:''}
-    </div>`;
-}
-
-function renderUpcoming(){
+// ═══════════════════════════════════════════════════
+// EQUIPAMENTOS
+// ═══════════════════════════════════════════════════
+function renderEquipamentos(){
   const today=fmtDate(new Date());
-  const bks=bookings.filter(b=>b.endDate>=today&&b.bookingType!=='manutencao').sort((a,b)=>(a.startDate+pad(a.startHour||0)).localeCompare(b.startDate+pad(b.startHour||0))).slice(0,10);
-  const el=document.getElementById('upcoming-list');
-  if(!bks.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text2)">Nenhuma reserva futura.</div>`;return;}
-  el.innerHTML=bks.map(b=>`
-    <div class="reserva-item" onclick="openEdit('${b.id}')">
-      <div class="ri-top">
-        <strong style="font-size:12px">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h</strong>
-        <span style="font-size:11px;color:var(--text3)">→ ${fmtBR(b.endDate)} ${pad(b.endHour||0)}h</span>
-        ${b.readType?`<span class="badge badge-exp">${b.readType}</span>`:''}
-      </div>
-      <div class="ri-info">👤 ${b.user}${b.lab?' · <strong>'+b.lab+'</strong>':''} · ${getDuration(b)}${b.phone?' · 📞'+b.phone:''}</div>
-    </div>`).join('');
+  const grid=document.getElementById('eq-grid');
+  grid.innerHTML=EQ.map(e=>{
+    const todayBks=bookings.filter(b=>bksForDate(today).includes(b)&&(b.equipment===e.id||b.comboColumn===e.id));
+    const busy=todayBks.length>0;
+    const isManut=busy&&todayBks.some(b=>b.bookingType==='manutencao');
+    const cat=e.cat;
+    const nextBk=bookings.filter(b=>b.date>=today&&(b.equipment===e.id||b.comboColumn===e.id)).sort((a,b)=>a.date.localeCompare(b.date))[0];
+    const strip=cat==='akta'?'strip-akta':cat==='coluna'?'strip-col':'strip-other';
+    const badgeCls=cat==='akta'?'badge-akta':cat==='coluna'?'badge-col':'badge-other';
+    const catLabel=cat==='akta'?'ÄKTA':cat==='coluna'?'Coluna':'Outro';
+    // Column usage counter
+    let colUsageHtml='';
+    if(cat==='coluna'){
+      const cs=getColStatus(e.id);
+      const barColor=cs.status==='danger'?'var(--red)':cs.status==='warn'?'var(--amber)':'var(--green)';
+      colUsageHtml=`<div class="col-usage-bar">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2)">
+          <span>Usos: ${cs.uses}/${cs.limit}</span>
+          ${cs.status==='danger'?'<span style="color:var(--red);font-weight:600">⚠ Limpeza!</span>':cs.status==='warn'?'<span style="color:var(--amber)">Atenção</span>':''}
+        </div>
+        <div class="col-usage-track"><div class="col-usage-fill" style="width:${cs.pct}%;background:${barColor}"></div></div>
+      </div>`;
+    }
+    return `<div class="eq-card" onclick="openEqDetail('${e.id}')">
+      <div class="eq-card-strip ${strip}"></div>
+      <div class="eq-name">${e.name}</div>
+      <span class="badge ${badgeCls}">${catLabel}</span>
+      ${isManut?'<span style="font-size:11px;color:#BA7517;font-weight:500">🔧 Em manutenção</span>':busy?'<span class="eq-busy">● Ocupado hoje</span>':'<span class="eq-avail">● Disponível hoje</span>'}
+      ${colUsageHtml}
+      ${!busy&&nextBk?`<span style="font-size:10px;color:var(--text3)">Próx: ${fmtBR(nextBk.date)}</span>`:''}
+    </div>`;
+  }).join('');
 }
 
-async function incrementUsage(){
-  const ref=db.collection('config').doc('usage');
-  const s=await ref.get();
-  if(s.exists)await ref.update({uses:firebase.firestore.FieldValue.increment(1),lastUsed:new Date().toISOString()});
-  else await ref.set({uses:1,limit:200,lastReset:null,lastResetBy:null,lastUsed:new Date().toISOString()});
-}
-async function resetUsage(){
-  if(!currentUser.isAdmin){alert('Só admins.');return;}
-  if(!confirm('Resetar contador?'))return;
-  await db.collection('config').doc('usage').set({uses:0,limit:usage.limit||200,lastReset:new Date().toISOString(),lastResetBy:currentUser.name},{merge:true});
-}
-async function setUsageLimit(){
-  const v=prompt(`Novo limite (atual: ${usage.limit||200}):`,usage.limit||200);
-  if(!v||isNaN(parseInt(v)))return;
-  await db.collection('config').doc('usage').set({limit:parseInt(v)},{merge:true});
-}
-
-// ═══════════════════════════════════
+// ═══════════════════════════════════════════════════
 // ADMIN
-// ═══════════════════════════════════
+// ═══════════════════════════════════════════════════
 function renderAdmin(){
   renderAdminUsers();
-  renderAdminPending();
-  renderAdminLimits();
-  renderAdminUsage();
-  renderAdminBk();
+  renderAdminBookings();
+  renderAdminColCounters();
 }
 
-function renderAdminPending(){
-  const el=document.getElementById('admin-pending-list');
-  const pc=document.getElementById('pending-count');
-  const pending=bookings.filter(b=>b.pending);
-  if(pc) pc.textContent=pending.length?`${pending.length} aguardando`:'';
-  if(!pending.length){
-    el.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhuma reserva pendente.</p>';
-    return;
-  }
-  el.innerHTML=pending.map(b=>`
-    <div style="background:var(--red-light);border:.5px solid var(--red);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-        <span style="font-size:12px;font-weight:600">⏳ ${b.user}${b.lab?' ('+b.lab+')':''}</span>
-        <span style="font-size:11px;color:var(--text2);margin-left:auto">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h → ${fmtBR(b.endDate)} ${pad(b.endHour||0)}h · ${getDuration(b)}</span>
-      </div>
-      ${b.readType?`<div style="font-size:11px;color:var(--text2);margin-bottom:6px">${b.readType}${b.plate?' · '+b.plate:''}</div>`:''}
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-sm btn-primary" onclick="approvePending('${b.id}')">✓ Aprovar</button>
-        <button class="btn btn-sm btn-danger" onclick="rejectPending('${b.id}','${b.user}')">✕ Recusar</button>
-      </div>
-    </div>`).join('');
-}
-
-function renderAdminLimits(){
-  const el=document.getElementById('admin-limits-list');
+function renderAdminColCounters(){
+  const el=document.getElementById('admin-col-counters');
   if(!el)return;
-  const month=currentMonth();
-  const sorted=[...users].sort((a,b)=>a.name.localeCompare(b.name,'pt'));
-  if(!sorted.length){el.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhum usuário.</p>';return;}
-  el.innerHTML=sorted.map(u=>{
-    const used=getUserHoursThisMonth(u.id);
-    const limit=getUserLimit(u.id);
-    const pct=Math.min(100,Math.round((used/limit)*100));
-    const status=used>=limit?'danger':used>=(limit*0.8)?'warn':'ok';
-    const bc=status==='danger'?'var(--red)':status==='warn'?'var(--amber)':'var(--purple)';
-    return`<div style="padding:8px 0;border-bottom:.5px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span style="font-size:13px;font-weight:500;flex:1">${u.name}${u.lab?' <span style="font-size:11px;color:var(--text2)">('+u.lab+')</span>':''}</span>
-        <span style="font-size:12px;color:${bc};font-weight:600">${used.toFixed(1)}h / ${limit}h</span>
-        <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="setUserLimit('${u.id}','${u.name}')">⚙ Ajustar</button>
+  const cols=EQ.filter(e=>e.cat==='coluna');
+  el.innerHTML=cols.map(e=>{
+    const cs=getColStatus(e.id);
+    const barColor=cs.status==='danger'?'var(--red)':cs.status==='warn'?'var(--amber)':'var(--blue)';
+    const lr=colCounters[e.id]?.lastReset;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;margin-bottom:3px">${e.name}</div>
+        <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden">
+          <div style="width:${cs.pct}%;height:100%;background:${barColor};border-radius:3px;transition:width .3s"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-top:2px">
+          <span>${cs.uses}/${cs.limit} usos</span>
+          ${lr?`<span>Última limpeza: ${fmtBR(lr.split('T')[0])}</span>`:'<span>Sem limpeza registrada</span>'}
+        </div>
       </div>
-      <div style="background:var(--bg3);border-radius:3px;height:6px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:${bc};border-radius:3px;transition:width .3s"></div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="resetColCounter('${e.id}')">🔄 Resetar</button>
+        <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="setColLimit('${e.id}')">⚙ Limite</button>
       </div>
-      ${status==='danger'?`<div style="font-size:11px;color:var(--red);margin-top:3px">⚠ Limite atingido este mês</div>`:''}
     </div>`;
   }).join('');
 }
 
 function renderAdminUsers(){
-  const el=document.getElementById('admin-user-list');
-  if(!users.length){el.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhum usuário.</p>';return;}
-  el.innerHTML=[...users].sort((a,b)=>a.name.localeCompare(b.name,'pt')).map(u=>`
+  const list=document.getElementById('admin-user-list');
+  if(!users.length){ list.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhum usuário cadastrado ainda.</p>'; return; }
+  const sorted=[...users].sort((a,b)=>a.name.localeCompare(b.name,'pt'));
+  list.innerHTML=sorted.map(u=>`
     <div class="user-row">
       <div class="avatar${u.isAdmin?' admin':''}">${initials(u.name)}</div>
-      <span class="uname">${u.name}${u.lab?' <span style="font-size:11px;color:var(--text2)">('+u.lab+')</span>':''} <span style="font-size:11px;color:var(--text3)">${u.email||''}</span></span>
+      <span class="uname">${u.name}${u.email?` <span style="font-size:11px;color:var(--text3)">${u.email}</span>`:''}${u.isExternal?` <span class="user-ext-tag">Ext${u.institution?' · '+u.institution:''}</span>`:''}</span>
       ${u.isAdmin?'<span class="admin-tag">Admin</span>':''}
-      <button class="btn btn-sm" onclick="editUser('${u.id}')">Editar</button>
-      <button class="btn btn-sm" onclick="toggleAdmin('${u.id}',${!u.isAdmin})">${u.isAdmin?'- Admin':'+ Admin'}</button>
-      ${u.id!==currentUser.id?`<button class="btn btn-sm btn-danger" onclick="revokeAccess('${u.id}','${u.name}')">Revogar</button>`:''}
+      <button class="btn btn-sm" onclick="editUserInstitution('${u.id}')">Editar</button>
+      <button class="btn btn-sm" onclick="toggleAdmin('${u.id}',${!u.isAdmin})">${u.isAdmin?'Remover admin':'Tornar admin'}</button>
+      ${u.id!==currentUser.id?`<button class="btn btn-sm btn-danger" onclick="revokeAccess('${u.id}','${u.name}')">Revogar acesso</button>`:'<span style="width:60px"></span>'}
     </div>`).join('');
 }
 
-function renderAdminUsage(){
-  const el=document.getElementById('admin-usage');
-  const uses=usage.uses||0;const limit=usage.limit||200;
-  const pct=Math.min(100,Math.round((uses/limit)*100));
-  const bc=uses>=limit?'var(--red)':uses>=(limit*0.8)?'var(--amber)':'var(--purple)';
-  el.innerHTML=`<div style="font-size:13px;margin-bottom:6px">${uses}/${limit} usos (${pct}%)</div>
-    <div class="usage-bar-track"><div class="usage-bar-fill" style="width:${pct}%;background:${bc}"></div></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn btn-sm btn-primary" onclick="resetUsage()">🔄 Resetar</button>
-      <button class="btn btn-sm" onclick="setUsageLimit()">⚙ Limite</button>
-    </div>`;
-}
-
-function renderAdminBk(){
-  const el=document.getElementById('admin-bk-list');
-  const bks=[...bookings].sort((a,b)=>(b.startDate+pad(b.startHour||0)).localeCompare(a.startDate+pad(a.startHour||0)));
-  if(!bks.length){el.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhuma reserva.</p>';return;}
-  el.innerHTML=bks.map(b=>`
-    <div class="reserva-item" onclick="openEdit('${b.id}')">
+function renderAdminBookings(){
+  const list=document.getElementById('admin-reservas-list');
+  const bks=[...bookings].sort((a,b)=>b.date.localeCompare(a.date));
+  const pl={manha:'Manhã',tarde:'Tarde',noite:'Noite',diatodo:'Dia todo',multidias:'Mais de um dia',custom:'Horário esp.'};
+  if(!bks.length){list.innerHTML='<p style="font-size:13px;color:var(--text2)">Nenhuma reserva.</p>';return;}
+  list.innerHTML=bks.map(b=>{
+    const e=eqById(b.equipment);
+    const cat=e?e.cat:'outro';
+    return `<div class="reserva-item" onclick="openEdit('${b.id}')">
       <div class="ri-top">
-        ${b.bookingType==='manutencao'?'<span class="badge badge-manut">🔧</span>':'<span class="badge badge-exp">🔬</span>'}
-        <span style="font-size:12px;font-weight:600;margin-left:auto">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h</span>
+        <span class="badge ${eqBadge(cat)||'badge-other'}">${eqName(b.equipment)}</span>
+        ${b.comboColumn?`<span class="badge badge-col" style="font-size:10px">+ ${eqName(b.comboColumn)}</span>`:''}
+        <span class="ri-date">${fmtBR(b.date)}</span>
       </div>
-      <div class="ri-info">👤 ${b.user}${b.lab?' · '+b.lab:''} · ${getDuration(b)}</div>
-    </div>`).join('');
+      <div class="ri-info">${svgUser()} ${b.user} · ${pl[b.period]||b.period}</div>
+    </div>`;
+  }).join('');
 }
 
-function editUser(uid){
-  const u=users.find(x=>x.id===uid);if(!u)return;
-  document.getElementById('eu-uid').value=uid;
-  document.getElementById('eu-name').textContent=u.name+(u.email?' · '+u.email:'');
-  document.getElementById('eu-lab').value=u.lab||'';
-  document.getElementById('eu-type').value=u.isExternal?'externo':'interno';
-  document.getElementById('eu-error').style.display='none';
-  show('edit-user-modal');
+function editUserInstitution(uid){
+  const u=users.find(x=>x.id===uid);
+  if(!u)return;
+  document.getElementById('au-uid').value=uid;
+  document.getElementById('au-name-display').textContent=u.name+(u.email?' · '+u.email:'');
+  document.getElementById('au-type').value=u.isExternal?'externo':'interno';
+  document.getElementById('au-inst').value=u.institution||'';
+  document.getElementById('au-inst-field').style.display=u.isExternal?'block':'none';
+  document.getElementById('au-error').style.display='none';
+  show('add-user-modal');
 }
+
 async function saveUserEdits(){
-  const uid=document.getElementById('eu-uid').value;
-  const lab=document.getElementById('eu-lab').value.trim();
-  const isExternal=document.getElementById('eu-type').value==='externo';
-  try{await db.collection('users').doc(uid).update({lab:lab||null,isExternal});document.getElementById('edit-user-modal').style.display='none';}
-  catch(err){showEl('eu-error',`<div class="alert alert-danger">Erro: ${err.message}</div>`);}
+  const uid=document.getElementById('au-uid').value;
+  const uType=document.getElementById('au-type').value;
+  const uInst=document.getElementById('au-inst').value.trim();
+  try{
+    await db.collection('users').doc(uid).update({isExternal:uType==='externo', institution:uInst||null});
+    document.getElementById('add-user-modal').style.display='none';
+  }catch(err){
+    showEl('au-error', `<div class="alert alert-danger">Erro ao salvar: ${err.message}</div>`);
+  }
 }
-async function toggleAdmin(uid,val){
+
+async function toggleAdmin(uid, val){
   if(!confirm(`${val?'Tornar':'Remover'} admin?`))return;
   await db.collection('users').doc(uid).update({isAdmin:val});
+  if(uid===currentUser.id){ currentUser.isAdmin=val; updateTopbar(); if(!val)document.getElementById('admin-tab').style.display='none'; }
 }
-async function revokeAccess(uid,name){
-  if(!confirm(`Revogar acesso de ${name}?`))return;
+
+async function revokeAccess(uid, name){
+  if(!confirm(`Revogar acesso de ${name}? O perfil será removido, mas as reservas feitas por essa pessoa serão mantidas. A pessoa ainda poderá criar uma nova conta se tiver o link.`))return;
   await db.collection('users').doc(uid).delete();
 }
 
-// ═══════════════════════════════════
-// CSV
-// ═══════════════════════════════════
+// ═══════════════════════════════════════════════════
+// CSV EXPORT
+// ═══════════════════════════════════════════════════
 function exportCSV(){
-  const rows=[['Data início','Hora início','Data fim','Hora fim','Duração','Tipo','Usuário','Laboratório','Telefone','Tipo de leitura','Placa','Proteína/Amostra','Observações']];
-  [...bookings].sort((a,b)=>a.startDate.localeCompare(b.startDate)).forEach(b=>{
-    rows.push([fmtBR(b.startDate),pad(b.startHour||0)+'h',fmtBR(b.endDate),pad(b.endHour||0)+'h',getDuration(b),b.bookingType==='manutencao'?'Manutenção':'Experimento',b.user||'',b.lab||'',b.phone||'',b.readType||'',b.plate||'',b.protein||'',b.notes||'']);
+  const pl={manha:'Manha',tarde:'Tarde',noite:'Noite',custom:'Horario especifico'};
+  const rows=[['Data','Tipo','Equipamento','Coluna vinculada','Usuario principal','Segundo usuario','Instituicao','Proteina/Amostra','Erlens','Volume(L)','Temp.inicial(C)','Overnight','Temp.overnight(C)','Troca de temp','Data fim expressao','Hora fim expressao','Periodo','Hora inicio','Hora fim','Observacoes']];
+  const bks=[...bookings].sort((a,b)=>a.date.localeCompare(b.date));
+  bks.forEach(b=>{
+    rows.push([
+      fmtBR(b.date),
+      b.bookingType==='manutencao'?'Manutencao':'Experimento',
+      eqName(b.equipment),
+      b.comboColumn?eqName(b.comboColumn):'',
+      b.user,
+      b.user2||'',
+      b.institution||'',
+      b.protein||'',
+      b.shakerErlens||'',
+      b.shakerVolume||'',
+      b.shakerTemp1||'',
+      b.shakerOvernight===true?'Sim':'Não',
+      b.shakerTemp2||'',
+      b.shakerTempChange||'',
+      b.shakerEndDate||'',
+      b.shakerEndTime||'',
+      pl[b.period]||b.period,
+      b.period==='custom'?b.startTime:'',
+      b.period==='custom'?b.endTime:'',
+      b.notes||''
+    ]);
   });
   const csv='\uFEFF'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download=`varioskan_reservas_${fmtDate(new Date())}.csv`;a.click();
+  a.download=`reservas_lab_${fmtDate(new Date())}.csv`;
+  a.click();
 }
 
-// ═══════════════════════════════════
-// UTILS
-// ═══════════════════════════════════
-function fmtDate(d){return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-function fmtBR(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
-function pad(n){return String(n).padStart(2,'0');}
-function initials(n){return(n||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);}
-function show(id){document.getElementById(id).style.display='block';}
-function hide(id){document.getElementById(id).style.display='none';}
-function showEl(id,html){const el=document.getElementById(id);el.innerHTML=html;el.style.display='block';}
 
+function setBookingType(type){
+  bookingType=type;
+  document.getElementById('type-exp').className='type-btn'+(type==='experimento'?' sel-exp':'');
+  document.getElementById('type-manut').className='type-btn'+(type==='manutencao'?' sel-manut':'');
+  document.getElementById('manut-banner').style.display=type==='manutencao'?'flex':'none';
+  // Toggle combo based on type + current equipment
+  const _eq=document.getElementById('bk-eq');
+  const _e=_eq?eqById(_eq.value):null;
+  if(type==='manutencao'){
+    document.getElementById('combo-section').style.display='none';
+  } else if(_e&&_e.cat==='akta'){
+    document.getElementById('combo-section').style.display='block';
+  }
+  document.getElementById('conflict-alert').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════
+// DAY POPUP
+// ═══════════════════════════════════════════════════
+let dayPopupDate = null;
+
+function openDayPopup(ds){
+  dayPopupDate = ds;
+  const bks = bksForDate(ds);
+  document.getElementById('day-popup-title').textContent = `${fmtBR(ds)} — ${bks.length} reserva${bks.length!==1?'s':''}`;
+  const pl={manha:'Manhã',tarde:'Tarde',noite:'Noite',diatodo:'Dia todo',multidias:'Mais de um dia',custom:'Horário esp.'};
+  const body = document.getElementById('day-popup-body');
+  if(!bks.length){
+    body.innerHTML='<div class="day-popup-empty">Nenhuma reserva neste dia.</div>';
+  } else {
+    body.innerHTML = bks.map(b=>{
+      const e=eqById(b.equipment);
+      const cat=e?e.cat:'outro';
+      const time=b.period==='custom'?`${b.startTime}–${b.endTime}`:pl[b.period]||b.period;
+      return `<div class="day-bk-item" onclick="closeDayPopup();openEdit('${b.id}')">
+        <div class="day-bk-top">
+          ${b.bookingType==='manutencao'?'<span class="badge badge-manut">🔧 Manutenção</span>':''}
+          <span class="badge ${eqBadge(cat)||'badge-other'}">${eqName(b.equipment)}</span>
+          ${b.comboColumn?`<span class="badge badge-col" style="font-size:10px">+ ${eqName(b.comboColumn)}</span>`:''}
+        </div>
+        ${b.protein?`<div style="margin-bottom:4px"><span class="protocol-badge">🧪 ${b.protein}</span></div>`:''}
+        ${b.shakerErlens||b.shakerTemp1?`<div style="margin-bottom:4px">${b.shakerErlens?`<span class="badge-shaker">🧫 ${b.shakerErlens} erlens</span> `:''}${b.shakerVolume?`<span class="badge-shaker">${b.shakerVolume}L</span> `:''}${b.shakerTemp1?`<span class="badge-shaker">${b.shakerTemp1}°C${b.shakerOvernight&&b.shakerTemp2?' → '+b.shakerTemp2+'°C ON':''}</span>`:''}${b.shakerTempChange?` <span style="font-size:11px;color:var(--text2)">troca às ${b.shakerTempChange}</span>`:''}</div>`:''}
+        <div class="day-bk-info">${svgUser()} <strong>${b.user}</strong>${b.user2?` + <strong>${b.user2}</strong>`:''}${b.institution?` <span class="badge-ext">${b.institution}</span>`:''} · ${time}${b.notes?` · <em>${b.notes}</em>`:''}</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('day-popup').style.display='flex';
+}
+
+function closeDayPopup(){
+  document.getElementById('day-popup').style.display='none';
+  dayPopupDate=null;
+}
+
+function newFromDayPopup(){
+  const d = dayPopupDate;
+  closeDayPopup();
+  openNew(d);
+}
+
+// ═══════════════════════════════════════════════════
+// EQ DETAIL
+// ═══════════════════════════════════════════════════
+let detailEqId = null;
+
+function openEqDetail(eqId){
+  detailEqId = eqId;
+  const e = eqById(eqId);
+  if(!e) return;
+  const today = fmtDate(new Date());
+  const todayBks = bksForDate(today).filter(b=>b.equipment===eqId||b.comboColumn===eqId);
+  const busy = todayBks.length>0;
+  const allBks = bookings.filter(b=>b.equipment===eqId||b.comboColumn===eqId).sort((a,b)=>b.date.localeCompare(a.date));
+  const futureBks = allBks.filter(b=>b.date>=today);
+  const pastBks = allBks.filter(b=>b.date<today).slice(0,5);
+  const pl={manha:'Manhã',tarde:'Tarde',noite:'Noite',diatodo:'Dia todo',multidias:'Mais de um dia',custom:'Horário esp.'};
+  const cat=e.cat;
+
+  document.getElementById('eq-detail-name').textContent = e.name;
+  const stripColor=e.cat==='akta'?'#378ADD':e.cat==='coluna'?'#639922':'#BA7517';
+  document.getElementById('eq-detail-name').style.cssText+=`;border-left:3px solid ${stripColor};padding-left:8px`;
+
+  const isCol=cat==='coluna';
+  const cs=isCol?getColStatus(e.id):null;
+  const tubeHeight=isCol?72:0;
+  const fillPct=isCol?cs.pct:0;
+  const fillColor=isCol?(cs.status==='danger'?'#E24B4A':cs.status==='warn'?'#BA7517':'#378ADD'):'#378ADD';
+
+  let html = `
+    <div class="eq-stat">
+      <span class="eq-stat-label">Tipo</span>
+      <span class="eq-stat-val"><span class="badge ${eqBadge(cat)||'badge-other'}">${cat==='akta'?'ÄKTA':cat==='coluna'?'Coluna':'Outro'}</span></span>
+    </div>
+    <div class="eq-stat">
+      <span class="eq-stat-label">Hoje</span>
+      <span class="eq-stat-val" style="color:${busy?'var(--red)':'var(--green-dark)'}">${busy?'● Ocupado':'● Disponível'}</span>
+    </div>
+    ${isCol?`<div class="eq-stat" style="align-items:flex-start;padding:12px 0">
+      <span class="eq-stat-label">Usos</span>
+      <div style="flex:1">
+        <div class="col-counter-wrap">
+          <div class="col-tube">
+            <div class="col-tube-cap"></div>
+            <div class="col-tube-body" style="height:${tubeHeight}px">
+              <div class="col-tube-fill" style="height:${fillPct}%;background:${fillColor}"></div>
+            </div>
+          </div>
+          <div class="col-counter-info">
+            <div class="col-counter-label">Usos registrados</div>
+            <div class="col-counter-val">${cs.uses} de ${cs.limit}</div>
+            ${cs.status==='danger'?`<div class="col-counter-danger">⚠ Limpeza recomendada!</div>`:''}
+            ${cs.status==='warn'?`<div class="col-counter-warn">⚠ Próximo do limite</div>`:''}
+            ${cs.uses===0?'<div style="font-size:11px;color:var(--text3)">Nenhum uso registrado</div>':''}
+            ${colCounters[e.id]?.lastReset?`<div style="font-size:10px;color:var(--text3);margin-top:4px">Última limpeza: ${fmtBR(colCounters[e.id].lastReset.split('T')[0])} por ${colCounters[e.id].lastResetBy||'—'}</div>`:''}
+          </div>
+        </div>
+        ${currentUser.isAdmin?`<div style="display:flex;gap:6px;margin-top:8px">
+          <button class="col-reset-btn" onclick="resetColCounter('${e.id}')">🔄 Resetar após limpeza</button>
+          <button class="col-reset-btn" onclick="setColLimit('${e.id}')">⚙ Ajustar limite</button>
+        </div>`:''}
+      </div>
+    </div>`:''}`;
+
+  if(futureBks.length){
+    html += `<div style="margin-top:4px"><div class="eq-hist-title">Próximas reservas</div>`;
+    html += futureBks.slice(0,5).map(b=>`
+      <div class="day-bk-item" onclick="closeEqDetail();openEdit('${b.id}')">
+        <div class="day-bk-top"><span style="font-size:12px;font-weight:600">${fmtBR(b.date)}</span>${b.protein?`<span class="protocol-badge" style="margin-left:6px">🧪 ${b.protein}</span>`:''}</div>
+        <div class="day-bk-info">${svgUser()} <strong>${b.user}</strong>${b.user2?` + ${b.user2}`:''}${b.institution?` <span class="badge-ext">${b.institution}</span>`:''} · ${pl[b.period]||b.period}${b.notes?` · <em>${b.notes}</em>`:''}</div>
+      </div>`).join('');
+    html += '</div>';
+  } else {
+    html += `<div class="day-popup-empty" style="padding:16px 0">Nenhuma reserva futura.</div>`;
+  }
+
+  if(pastBks.length){
+    html += `<div style="margin-top:4px"><div class="eq-hist-title">Últimas reservas</div>`;
+    html += pastBks.map(b=>`
+      <div class="day-bk-item" style="opacity:.7" onclick="closeEqDetail();openEdit('${b.id}')">
+        <div class="day-bk-top"><span style="font-size:12px;font-weight:600">${fmtBR(b.date)}</span>${b.protein?`<span class="protocol-badge" style="margin-left:6px">🧪 ${b.protein}</span>`:''}</div>
+        <div class="day-bk-info">${svgUser()} <strong>${b.user}</strong>${b.user2?` + ${b.user2}`:''}${b.institution?` <span class="badge-ext">${b.institution}</span>`:''} · ${pl[b.period]||b.period}</div>
+      </div>`).join('');
+    html += '</div>';
+  }
+
+  document.getElementById('eq-detail-body').innerHTML = html;
+  document.getElementById('eq-detail-reserve-btn').onclick = ()=>{ closeEqDetail(); openNewForEq(eqId); };
+  document.getElementById('eq-detail').style.display='flex';
+}
+
+function closeEqDetail(){
+  document.getElementById('eq-detail').style.display='none';
+  detailEqId=null;
+}
+
+function openNewForEq(eqId){
+  openNew(null); // null = today, but unlocked
+  // Pre-select the equipment after modal renders
+  setTimeout(()=>{
+    const sel=document.getElementById('bk-eq');
+    sel.value=eqId;
+    onEqChange();
+    // Unlock the date field so user can pick any day
+    const dateDisp=document.getElementById('bk-date-display');
+    const dateRaw=document.getElementById('bk-date');
+    if(dateDisp){
+      // Replace readonly display with an actual date input
+      const wrapper=dateDisp.parentNode;
+      dateDisp.style.display='none';
+      let picker=document.getElementById('bk-date-picker');
+      if(!picker){
+        picker=document.createElement('input');
+        picker.type='date';
+        picker.id='bk-date-picker';
+        picker.style.width='100%';
+        picker.onchange=function(){
+          dateRaw.value=this.value;
+          dateDisp.value=fmtBR(this.value);
+          checkShakerCapacity();
+        };
+        wrapper.insertBefore(picker,dateDisp);
+      }
+      picker.value=dateRaw.value;
+      picker.style.display='block';
+    }
+  },50);
+}
+
+// ═══════════════════════════════════════════════════
+// PERIOD FILTER FOR RESERVAS
+// ═══════════════════════════════════════════════════
+let activePeriodFilter = '';
+
+function selPeriodFilter(el){
+  document.querySelectorAll('.filter-period-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  activePeriodFilter = el.dataset.m;
+  renderReservas();
+}
+
+// Debounced search
+let _searchTimer=null;
+function debounceSearch(){ clearTimeout(_searchTimer); _searchTimer=setTimeout(renderReservas,250); }
+
+// ═══════════════════════════════════════════════════
+// COLUMN USAGE COUNTER
+// ═══════════════════════════════════════════════════
+async function incrementColUse(colId){
+  const ref=db.collection('colCounters').doc(colId);
+  const snap=await ref.get();
+  if(snap.exists){
+    await ref.update({uses: (snap.data().uses||0)+1, lastUsed: new Date().toISOString()});
+  } else {
+    // First use — create with default limit
+    const defaultLimit=colId.includes('1030')||colId.includes('increase')?20:10;
+    await ref.set({uses:1, limit:defaultLimit, lastReset:null, lastResetBy:null, lastUsed:new Date().toISOString()});
+  }
+}
+
+async function resetColCounter(colId){
+  const colName=eqName(colId);
+  if(!confirm(`Resetar contador de "${colName}"?
+
+Isso indica que a coluna foi limpa/regenerada.`))return;
+  await db.collection('colCounters').doc(colId).set({
+    uses:0,
+    limit: colCounters[colId]?.limit || 10,
+    lastReset: new Date().toISOString(),
+    lastResetBy: currentUser.name
+  },{merge:true});
+}
+
+async function setColLimit(colId){
+  const current=colCounters[colId]?.limit||10;
+  const val=prompt(`Limite de usos para "${eqName(colId)}":
+(Atual: ${current})`, current);
+  if(!val||isNaN(parseInt(val)))return;
+  await db.collection('colCounters').doc(colId).set({limit:parseInt(val)},{merge:true});
+}
+
+function getColStatus(colId){
+  const c=colCounters[colId];
+  if(!c) return {uses:0, limit:10, pct:0, status:'ok'};
+  const uses=c.uses||0;
+  const limit=c.limit||10;
+  const pct=Math.min(100,Math.round((uses/limit)*100));
+  const status=uses>=limit?'danger':uses>=(limit*0.8)?'warn':'ok';
+  return {uses, limit, pct, status};
+}
+
+// ═══════════════════════════════════════════════════
+// Escape key closes modals
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    if(document.getElementById('booking-modal').style.display!=='none')closeModal();
-    if(document.getElementById('edit-user-modal').style.display!=='none')document.getElementById('edit-user-modal').style.display='none';
+    if(document.getElementById('booking-modal').style.display!=='none') closeModal();
+    if(document.getElementById('day-popup').style.display!=='none') closeDayPopup();
+    if(document.getElementById('eq-detail').style.display!=='none') closeEqDetail();
+    if(document.getElementById('add-user-modal').style.display!=='none') document.getElementById('add-user-modal').style.display='none';
   }
 });
+
+// ═══════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════
+function fmtDate(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fmtBR(s){ if(!s)return''; const[y,m,d]=s.split('-'); return `${d}/${m}/${y}`; }
+function pad(n){ return String(n).padStart(2,'0'); }
+function initials(n){ return (n||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2); }
+function v(id){ return document.getElementById(id).value.trim(); }
+function show(id){ document.getElementById(id).style.display='block'; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function showEl(id,html){ const el=document.getElementById(id); el.innerHTML=html; el.style.display='block'; }
+function svgUser(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:-1px"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/></svg>`; }
 </script>
 </body>
 </html>
