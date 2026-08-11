@@ -138,10 +138,38 @@ textarea{resize:vertical;min-height:60px}
 .warn-box{background:var(--amber-light);border:.5px solid var(--amber);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--amber);line-height:1.6;margin-bottom:12px}
 
 @media(max-width:640px){
-  .main{padding:10px}
-  .topbar{padding:0 12px;height:48px}
+  .main{padding:8px}
+  .topbar{padding:0 10px;height:auto;min-height:48px;flex-wrap:wrap;gap:6px;padding-top:6px;padding-bottom:6px}
+  .topbar-logo{font-size:14px}
+  .topbar-user{max-width:46vw}
+  .topbar-user span{max-width:28vw!important}
+  .nav-tabs{padding:0 8px}
+  .nav-tab{padding:10px 10px;font-size:12px}
   .overlay{padding:0;align-items:flex-end}
-  .modal{max-width:100%;border-radius:var(--radius) var(--radius) 0 0;max-height:92vh}
+  .modal{max-width:100%;border-radius:var(--radius) var(--radius) 0 0;max-height:94vh}
+  .modal-body{padding:12px}
+  .week-nav{flex-wrap:wrap;gap:6px}
+  .week-nav h2{flex-basis:100%;order:-1;text-align:center;font-size:13px}
+  .week-nav .btn{flex:1;justify-content:center;min-height:38px}
+  .eq-sel-btn{padding:8px 12px;min-height:38px;display:flex;align-items:center}
+  .tg-hour-label{width:46px;font-size:10px;padding:2px 4px}
+  .tg-time-col{width:46px;font-size:10px}
+  .tg-day-header{font-size:10px;padding:5px 2px}
+  .tg-booking-block{font-size:9px!important}
+  .btn{min-height:36px}
+  input,select,textarea{font-size:16px;min-height:40px}
+  .field label{font-size:13px}
+  .info-box{font-size:11px;padding:8px 10px}
+  .reserva-item{padding:10px}
+  .ri-top{gap:5px}
+  .user-row{padding:8px}
+  .user-row .btn-sm{flex:1;justify-content:center}
+}
+/* Respeita fontes grandes do sistema sem quebrar layout */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@media(max-width:400px){
+  .badge{font-size:10px;padding:2px 6px}
+  .tg-hour-label,.tg-time-col{width:40px}
 }
 </style>
 </head>
@@ -177,6 +205,25 @@ textarea{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- NAME PICKER (primeiro login) -->
+<div id="name-picker-screen" style="display:none">
+  <div class="login-screen">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;margin-bottom:20px">
+      <div class="logo-box">VL</div>
+      Varioskan <span style="font-weight:400;color:var(--text2)">Reservas</span>
+    </div>
+    <h2 style="font-size:17px;font-weight:700;margin-bottom:6px">Como quer ser identificado?</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Este nome aparecerá nas reservas da agenda. Use o nome pelo qual todos te conhecem no laboratório.</p>
+    <div class="field">
+      <label>Seu nome</label>
+      <input type="text" id="picker-name" placeholder="ex: Aiza, Katia, Lucas..." autocomplete="off" onkeydown="if(event.key==='Enter')confirmName()">
+    </div>
+    <div id="picker-error" style="display:none;margin-bottom:8px"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;margin-top:4px" id="confirm-name-btn" onclick="confirmName()">Confirmar e entrar</button>
+    <p style="font-size:11px;color:var(--text3);margin-top:14px;text-align:center">Você pode alterar o nome depois clicando no seu perfil.</p>
+  </div>
+</div>
+
 <!-- APP -->
 <div id="app" style="display:none">
   <div class="topbar">
@@ -185,7 +232,7 @@ textarea{resize:vertical;min-height:60px}
       <span>Varioskan <span style="font-weight:400;color:var(--text2)">Reservas</span></span>
     </div>
     <div style="flex:1"></div>
-    <div class="topbar-user" onclick="logout()" title="Sair">
+    <div class="topbar-user" onclick="openProfile()" title="Meu perfil">
       <div class="avatar" id="top-avatar">?</div>
       <span id="top-name" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
     </div>
@@ -400,6 +447,31 @@ textarea{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- PROFILE MODAL -->
+<div class="overlay" id="profile-modal" style="display:none" onclick="if(event.target===this)hide('profile-modal')">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-head"><h3>Meu perfil</h3><button class="btn" style="width:28px;height:28px;padding:0;justify-content:center" onclick="hide('profile-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Nome exibido nas reservas</label>
+        <input type="text" id="profile-name" autocomplete="off">
+        <p style="font-size:11px;color:var(--text3);margin-top:3px">Ao mudar, suas reservas futuras serão atualizadas com o novo nome.</p>
+      </div>
+      <div class="field">
+        <label>Laboratório</label>
+        <input type="text" id="profile-lab" placeholder="ex: Lab A">
+      </div>
+      <div id="profile-error" style="display:none"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-sm" onclick="hide('profile-modal');logout()">Sair da conta</button>
+      <div class="sp"></div>
+      <button class="btn" onclick="hide('profile-modal')">Cancelar</button>
+      <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfile()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT USER MODAL -->
 <div class="overlay" id="edit-user-modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal" style="max-width:360px">
@@ -467,8 +539,14 @@ window.onload=async function(){
     db=firebase.firestore();auth=firebase.auth();
     auth.onAuthStateChanged(async u=>{
       hide('loading-screen');
-      if(u){firebaseUser=u;await loadOrCreateProfile(u);startApp();}
-      else{firebaseUser=null;currentUser=null;hide('app');show('login-screen');}
+      if(u){
+        firebaseUser=u;
+        const needsPicker=await loadOrCreateProfile(u);
+        if(!needsPicker)startApp();
+      }else{
+        firebaseUser=null;currentUser=null;window._pendingProfile=null;
+        hide('app');hide('name-picker-screen');show('login-screen');
+      }
     });
   }catch(e){
     hide('loading-screen');
@@ -492,7 +570,12 @@ async function signInGoogle(){
       showEl('auth-error',`<div class="alert alert-danger">${err.message}</div>`);
   }
 }
-function logout(){if(!confirm(`Sair?`))return;auth.signOut();}
+function logout(){
+  if(!confirm('Sair da conta?'))return;
+  window._pendingProfile=null;
+  hide('profile-modal');hide('name-picker-screen');
+  auth.signOut();
+}
 
 async function loadOrCreateProfile(user){
   const ref=db.collection('users').doc(user.uid);
@@ -503,10 +586,98 @@ async function loadOrCreateProfile(user){
     const isAdm=ADMIN_EMAILS.includes(user.email)||d.isAdmin;
     if(isAdm&&!d.isAdmin)await ref.update({isAdmin:true});
     currentUser={id:user.uid,...d,isAdmin:isAdm};
+    return false; // usuário existente — entra direto
   }else{
-    const isAdmin=users.length===0||ADMIN_EMAILS.includes(user.email);
-    const p={name:user.displayName||user.email.split('@')[0],email:user.email,isAdmin,isExternal:false,lab:'',createdAt:new Date().toISOString()};
-    await ref.set(p);currentUser={id:user.uid,...p};await loadUsers();
+    // Novo usuário — mostra escolha de nome
+    const sug=user.displayName||user.email.split('@')[0];
+    const inp=document.getElementById('picker-name');
+    if(inp)inp.value=sug;
+    hide('login-screen');
+    show('name-picker-screen');
+    window._pendingProfile={
+      uid:user.uid,
+      email:user.email,
+      isAdmin:users.length===0||ADMIN_EMAILS.includes(user.email)
+    };
+    return true; // aguardando confirmName()
+  }
+}
+
+async function confirmName(){
+  const name=(document.getElementById('picker-name').value||'').trim();
+  const errEl=document.getElementById('picker-error');
+  errEl.style.display='none';
+  if(name.length<2){
+    errEl.innerHTML='<div class="alert alert-danger">⚠️ Informe um nome com pelo menos 2 caracteres.</div>';
+    errEl.style.display='block';return;
+  }
+  if(users.find(u=>(u.name||'').toLowerCase()===name.toLowerCase())){
+    errEl.innerHTML='<div class="alert alert-danger">⚠️ Já existe um usuário com esse nome. Escolha outro.</div>';
+    errEl.style.display='block';return;
+  }
+  const btn=document.getElementById('confirm-name-btn');
+  btn.textContent='Entrando...';btn.disabled=true;
+  try{
+    const p=window._pendingProfile;
+    const profile={name,email:p.email,isAdmin:p.isAdmin,isExternal:false,lab:'',createdAt:new Date().toISOString()};
+    await db.collection('users').doc(p.uid).set(profile);
+    currentUser={id:p.uid,...profile};
+    await loadUsers();
+    window._pendingProfile=null;
+    hide('name-picker-screen');
+    startApp();
+  }catch(err){
+    errEl.innerHTML=`<div class="alert alert-danger">Erro: ${err.message}</div>`;
+    errEl.style.display='block';
+    btn.textContent='Confirmar e entrar';btn.disabled=false;
+  }
+}
+
+function openProfile(){
+  if(!currentUser)return;
+  document.getElementById('profile-name').value=currentUser.name||'';
+  document.getElementById('profile-lab').value=currentUser.lab||'';
+  document.getElementById('profile-error').style.display='none';
+  show('profile-modal');
+}
+
+async function saveProfile(){
+  const newName=(document.getElementById('profile-name').value||'').trim();
+  const newLab=(document.getElementById('profile-lab').value||'').trim();
+  const errEl=document.getElementById('profile-error');
+  errEl.style.display='none';
+  if(newName.length<2){
+    errEl.innerHTML='<div class="alert alert-danger">⚠️ Nome muito curto.</div>';
+    errEl.style.display='block';return;
+  }
+  const dup=users.find(u=>u.id!==currentUser.id&&(u.name||'').toLowerCase()===newName.toLowerCase());
+  if(dup){
+    errEl.innerHTML='<div class="alert alert-danger">⚠️ Já existe um usuário com esse nome.</div>';
+    errEl.style.display='block';return;
+  }
+  const btn=document.getElementById('profile-save-btn');
+  btn.textContent='Salvando...';btn.disabled=true;
+  const oldName=currentUser.name;
+  try{
+    await db.collection('users').doc(currentUser.id).update({name:newName,lab:newLab||''});
+    // Renomeia reservas futuras (e de hoje) com o nome antigo
+    if(oldName!==newName){
+      const today=fmtDate(new Date());
+      const toRename=bookings.filter(b=>b.user===oldName&&b.endDate>=today);
+      for(const b of toRename){
+        try{ await db.collection('bookings').doc(b.id).update({user:newName}); }
+        catch(e){ console.warn('rename booking:',e); }
+      }
+    }
+    currentUser.name=newName;currentUser.lab=newLab;
+    document.getElementById('top-name').textContent=newName+(newLab?` (${newLab})`:'');
+    document.getElementById('top-avatar').textContent=initials(newName);
+    hide('profile-modal');
+  }catch(err){
+    errEl.innerHTML=`<div class="alert alert-danger">Erro: ${err.message}</div>`;
+    errEl.style.display='block';
+  }finally{
+    btn.textContent='Salvar';btn.disabled=false;
   }
 }
 
@@ -760,7 +931,8 @@ function renderTimeline(){
     });
     html+='</div>';
   }
-  document.getElementById('timeline-grid').innerHTML=html;
+  const grid=document.getElementById('timeline-grid');
+  if(grid)grid.innerHTML=html;
 
   // Prevent text selection during drag
   document.getElementById('timeline-grid').addEventListener('selectstart',e=>e.preventDefault());
@@ -768,7 +940,8 @@ function renderTimeline(){
 
 // ── Drag to select multiple hours ──
 function startDrag(ds,h,e){
-  // Only start drag on empty cells
+  // Drag só com mouse; em touch o clique simples já abre o modal
+  if(window.matchMedia('(pointer: coarse)').matches)return;
   const cell=e.currentTarget;
   if(cell.classList.contains('occupied'))return;
   dragState={startDate:ds,startHour:h,endHour:h,active:true};
@@ -1016,13 +1189,14 @@ Deseja continuar?`)){return;}
 
   const btn=document.getElementById('save-btn');
   btn.textContent='Salvando...';btn.disabled=true;
+  const _timeout=(p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Tempo esgotado. Verifique a conexão.')),12000))]);
   try{
     const data={equipment:eqId,startDate:sd,startHour:sh,endDate:ed,endHour:eh,bookingType,user,lab,phone:phone||null,protein:eqI.expFields?(protein||null):null,readType:eqI.expFields?(readType||null):null,plate:eqI.expFields?(plate||null):null,uvOff:eqI.uvField?(document.getElementById('bk-uv-off')?.checked||false):null,notes:notes||null,pending:isPending,updatedAt:new Date().toISOString()};
     if(editingId){
-      await db.collection('bookings').doc(editingId).update(data);
+      await _timeout(db.collection('bookings').doc(editingId).update(data));
     }else{
       data.createdAt=new Date().toISOString();
-      await db.collection('bookings').add(data);
+      await _timeout(db.collection('bookings').add(data));
       if(bookingType==='experimento'&&eqId==='varioskan'){
         await incrementUsage();
       }
@@ -1043,9 +1217,21 @@ Deseja continuar?`)){return;}
 
 async function deleteBooking(){
   if(!editingId)return;
-  if(!confirm('Excluir reserva?'))return;
-  await db.collection('bookings').doc(editingId).delete();
-  closeModal();
+  if(!confirm('Excluir reserva? Esta ação não pode ser desfeita.'))return;
+  const btn=document.getElementById('del-btn');
+  const orig=btn.innerHTML;
+  btn.textContent='Excluindo...';btn.disabled=true;
+  try{
+    await Promise.race([
+      db.collection('bookings').doc(editingId).delete(),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('Tempo esgotado. Verifique a conexão.')),10000))
+    ]);
+    closeModal();
+  }catch(err){
+    alert('Erro ao excluir: '+err.message);
+  }finally{
+    btn.innerHTML=orig;btn.disabled=false;
+  }
 }
 
 function showConflict(msg){
@@ -1344,7 +1530,8 @@ function showEl(id,html){const el=document.getElementById(id);el.innerHTML=html;
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(document.getElementById('booking-modal').style.display!=='none')closeModal();
-    if(document.getElementById('edit-user-modal').style.display!=='none')document.getElementById('edit-user-modal').style.display='none';
+    if(document.getElementById('edit-user-modal').style.display!=='none')hide('edit-user-modal');
+    if(document.getElementById('profile-modal').style.display!=='none')hide('profile-modal');
   }
 });
 </script>
