@@ -126,6 +126,13 @@ textarea{resize:vertical;min-height:60px}
 .user-row .uname{flex:1;font-size:13px}
 .admin-tag{font-size:11px;padding:2px 8px;border-radius:4px;background:var(--amber-light);color:var(--amber);font-weight:500}
 
+/* Equipment selector */
+.eq-selector{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.eq-selector::-webkit-scrollbar{display:none}
+.eq-sel-btn{padding:7px 14px;border:1px solid var(--border2);border-radius:20px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;background:var(--bg);color:var(--text2);transition:all .15s;flex-shrink:0}
+.eq-sel-btn:hover{border-color:var(--purple)}
+.eq-sel-btn.sel{color:#fff;border-color:transparent}
+
 /* Info box */
 .info-box{background:var(--purple-light);border:.5px solid var(--purple);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--purple-dark);line-height:1.6;margin-bottom:12px}
 .warn-box{background:var(--amber-light);border:.5px solid var(--amber);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--amber);line-height:1.6;margin-bottom:12px}
@@ -194,7 +201,8 @@ textarea{resize:vertical;min-height:60px}
 
     <!-- AGENDA (Timeline) -->
     <div class="panel active" id="panel-timeline">
-      <div class="info-box">
+      <div class="eq-selector" id="eq-selector"></div>
+      <div class="info-box" id="rules-box">
         📋 <strong>Regras:</strong> Confirme a lista antes de reservar. Não reserve o mesmo horário que outra pessoa. Não reservar por mais de 2 dias seguidos sem autorização prévia. Curvas &gt;48h: iniciar na sexta e ler no final de semana.
       </div>
       <div class="week-nav">
@@ -212,6 +220,7 @@ textarea{resize:vertical;min-height:60px}
     <!-- RESERVAS -->
     <div class="panel" id="panel-reservas">
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+        <select id="f-eq" onchange="renderReservas()" style="flex:1;min-width:130px"><option value="">Todos os equipamentos</option></select>
         <select id="f-user" onchange="renderReservas()" style="flex:1;min-width:130px"><option value="">Todos os usuários</option></select>
         <select id="f-lab" onchange="renderReservas()" style="flex:1;min-width:130px"><option value="">Todos os laboratórios</option></select>
         <input type="text" id="f-search" placeholder="Buscar..." style="flex:1;min-width:110px" oninput="debounceSearch()">
@@ -290,6 +299,10 @@ textarea{resize:vertical;min-height:60px}
     </div>
     <div class="modal-body">
       <div class="field">
+        <label>Equipamento</label>
+        <select id="bk-equipment" onchange="onBkEqChange()"></select>
+      </div>
+      <div class="field">
         <label>Tipo</label>
         <div class="type-toggle">
           <div class="type-btn sel-exp" id="tb-exp" onclick="setType('experimento')">🔬 Experimento</div>
@@ -352,6 +365,13 @@ textarea{resize:vertical;min-height:60px}
           <input type="text" id="bk-protein" placeholder="ex: MadB, TraI...">
         </div>
       </div>
+      <div class="field" id="uv-field" style="display:none">
+        <label class="overnight-toggle" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="bk-uv-off">
+          💡 Luz UV desligada após o uso
+        </label>
+        <p style="font-size:11px;color:var(--text3);margin-top:3px">Marque quando desligar a luz UV ao terminar. Pode editar a reserva depois para marcar.</p>
+      </div>
       <div class="field">
         <label>Usuário</label>
         <select id="bk-user"></select>
@@ -410,7 +430,21 @@ const FIREBASE_CONFIG={
   appId:"1:446900743906:web:699a998bf6bad9c329b8bb"
 };
 const ADMIN_EMAILS=['danilopavao@usp.br','rgalhard@usp.br'];
-const MAX_DAYS=2; // limite de dias consecutivos sem autorização
+const MAX_DAYS=2; // limite de dias consecutivos sem autorização (só Varioskan)
+
+// ── EQUIPAMENTOS ──
+// hourLimit: se true, aplica limite mensal de horas por usuário
+// uvField: se true, mostra campo "Luz UV desligada?" (fluxos)
+// expFields: se true, mostra campos de leitura/placa/proteína (Varioskan)
+const EQUIPMENTS=[
+  {id:'varioskan',   name:'Varioskan Lux',        short:'Varioskan', color:'#6C3FC5', hourLimit:true,  uvField:false, expFields:true},
+  {id:'fluxo-pa420', name:'Fluxo Laminar PA420',  short:'PA420',     color:'#0E9E8E', hourLimit:false, uvField:true,  expFields:false},
+  {id:'fluxo-pa410', name:'Fluxo Laminar PA410',  short:'PA410',     color:'#0E9E8E', hourLimit:false, uvField:true,  expFields:false},
+  {id:'termo-applied',  name:'Termociclador Applied',   short:'T. Applied',   color:'#BA7517', hourLimit:false, uvField:false, expFields:false},
+  {id:'termo-eppendorf',name:'Termociclador Eppendorf', short:'T. Eppendorf', color:'#BA7517', hourLimit:false, uvField:false, expFields:false},
+];
+let currentEq='varioskan'; // equipamento selecionado na agenda
+function eqInfo(id){ return EQUIPMENTS.find(e=>e.id===id)||EQUIPMENTS[0]; }
 
 // ═══════════════════════════════════
 // STATE
@@ -618,7 +652,38 @@ const MONTHS_SHORT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out',
 // ── Drag-to-select state ──
 let dragState=null; // {startDate, startHour, active}
 
+function renderEqSelector(){
+  const el=document.getElementById('eq-selector');
+  if(!el)return;
+  el.innerHTML=EQUIPMENTS.map(e=>{
+    const sel=e.id===currentEq;
+    return `<div class="eq-sel-btn${sel?' sel':''}" style="${sel?`background:${e.color}`:''}" onclick="selectEq('${e.id}')">${e.name}</div>`;
+  }).join('');
+  // Update rules box — only Varioskan has the 2-day rule
+  const rb=document.getElementById('rules-box');
+  if(rb){
+    const e=eqInfo(currentEq);
+    if(e.id==='varioskan'){
+      rb.innerHTML='📋 <strong>Regras:</strong> Confirme a lista antes de reservar. Não reserve o mesmo horário que outra pessoa. Não reservar por mais de 2 dias seguidos sem autorização prévia. Curvas &gt;48h: iniciar na sexta e ler no final de semana.';
+      rb.style.display='block';
+    } else if(e.uvField){
+      rb.innerHTML=`📋 <strong>${e.name}:</strong> Após o uso, limpe a área de trabalho e <strong>desligue a luz UV</strong>. Marque na sua reserva quando desligar.`;
+      rb.style.display='block';
+    } else {
+      rb.innerHTML=`📋 <strong>${e.name}:</strong> Confirme a agenda antes de reservar e libere o equipamento no horário.`;
+      rb.style.display='block';
+    }
+  }
+}
+
+function selectEq(id){
+  currentEq=id;
+  renderEqSelector();
+  renderTimeline();
+}
+
 function renderTimeline(){
+  renderEqSelector();
   const todayStr=fmtDate(new Date());
   const days=Array.from({length:7},(_,i)=>{
     const d=new Date(weekStart);d.setDate(d.getDate()+i);return d;
@@ -639,10 +704,11 @@ function renderTimeline(){
   // For each column (day), build merged booking spans
   // Map: dayStr -> array of {booking, startH, endH (within this day)}
   const dayBookings={};
+  const eqBookings=bookings.filter(b=>(b.equipment||'varioskan')===currentEq);
   days.forEach(d=>{
     const ds=fmtDate(d);
     dayBookings[ds]=[];
-    bookings.forEach(b=>{
+    eqBookings.forEach(b=>{
       // Find hours this booking covers on this day
       const hours=[];
       for(let h=0;h<24;h++){
@@ -774,6 +840,8 @@ function coversHour(b,dateStr,hour){
 function openNew(date,hour,endHour){
   editingId=null;bookingType='experimento';
   document.getElementById('modal-title').textContent='Nova reserva';
+  populateBkEquipment(currentEq);
+  const uvCb=document.getElementById('bk-uv-off'); if(uvCb) uvCb.checked=false;
   document.getElementById('del-btn').style.display='none';
   document.getElementById('conflict-alert').style.display='none';
   document.getElementById('bk-notes').value='';
@@ -800,6 +868,8 @@ function openEdit(id){
   if(b.user!==currentUser.name&&!currentUser.isAdmin){alert('Só o dono ou um admin pode editar.');return;}
   editingId=id;bookingType=b.bookingType||'experimento';
   document.getElementById('modal-title').textContent='Editar reserva';
+  populateBkEquipment(b.equipment||'varioskan');
+  const uvCb2=document.getElementById('bk-uv-off'); if(uvCb2) uvCb2.checked=!!b.uvOff;
   document.getElementById('del-btn').style.display='block';
   document.getElementById('conflict-alert').style.display='none';
   document.getElementById('bk-start-date').value=b.startDate;
@@ -823,7 +893,26 @@ function setType(type){
   document.getElementById('tb-exp').className='type-btn'+(type==='experimento'?' sel-exp':'');
   document.getElementById('tb-manut').className='type-btn'+(type==='manutencao'?' sel-manut':'');
   document.getElementById('manut-banner').style.display=type==='manutencao'?'block':'none';
-  document.getElementById('exp-fields').style.display=type==='experimento'?'block':'none';
+  applyEqFields();
+}
+
+function populateBkEquipment(sel){
+  const s=document.getElementById('bk-equipment');
+  if(!s)return;
+  s.innerHTML=EQUIPMENTS.map(e=>`<option value="${e.id}"${e.id===(sel||currentEq)?' selected':''}>${e.name}</option>`).join('');
+}
+
+function onBkEqChange(){
+  applyEqFields();
+}
+
+function applyEqFields(){
+  const eqId=document.getElementById('bk-equipment')?.value||'varioskan';
+  const e=eqInfo(eqId);
+  // Exp fields (leitura/placa/proteína) only for equipment with expFields AND type experimento
+  document.getElementById('exp-fields').style.display=(e.expFields&&bookingType==='experimento')?'block':'none';
+  // UV field only for fluxos
+  document.getElementById('uv-field').style.display=e.uvField?'block':'none';
 }
 
 function populateUserSelect(sel){
@@ -864,21 +953,23 @@ function updateDurationLabel(){
   document.addEventListener('change',e=>{if(e.target&&e.target.id===id)updateDurationLabel();});
 });
 
-function checkConflict(sd,sh,ed,eh,excId){
+function checkConflict(sd,sh,ed,eh,excId,eqId){
   const newStart=sd+pad(sh);
   const newEnd=ed+pad(eh);
   for(const b of bookings){
     if(b.id===excId)continue;
+    if((b.equipment||'varioskan')!==eqId)continue; // só conflita no mesmo equipamento
     const bStart=b.startDate+pad(b.startHour||0);
     const bEnd=b.endDate+pad(b.endHour||24);
-    // Overlap if newStart < bEnd AND newEnd > bStart
     if(newStart<bEnd&&newEnd>bStart)
-      return `Conflito com reserva de ${b.user}${b.lab?' ('+b.lab+')':''}.`;
+      return `Conflito com reserva de ${b.user}${b.lab?' ('+b.lab+')':''} no ${eqInfo(eqId).name}.`;
   }
   return null;
 }
 
 async function saveBooking(){
+  const eqId=document.getElementById('bk-equipment')?.value||'varioskan';
+  const eqI=eqInfo(eqId);
   const sd=document.getElementById('bk-start-date').value;
   const sh=parseInt(document.getElementById('bk-start-hour').value)||0;
   const ed=document.getElementById('bk-end-date').value;
@@ -897,12 +988,12 @@ async function saveBooking(){
   const newEnd=new Date(ed+'T'+pad(eh)+':00');
   if(newEnd<=newStart){showConflict('⚠️ Data/hora de fim deve ser após o início.');return;}
 
-  const conflict=checkConflict(sd,sh,ed,eh,editingId);
+  const conflict=checkConflict(sd,sh,ed,eh,editingId,eqId);
   if(conflict){showConflict(conflict);return;}
 
-  // Check user hour limit for new bookings
+  // Check user hour limit for new bookings (só equipamentos com hourLimit)
   let isPending=false;
-  if(!editingId&&bookingType==='experimento'){
+  if(!editingId&&bookingType==='experimento'&&eqI.hourLimit){
     const bUser=users.find(u=>u.name===user);
     if(bUser){
       const newStart=new Date(sd+'T'+pad(sh)+':00');
@@ -926,15 +1017,16 @@ Deseja continuar?`)){return;}
   const btn=document.getElementById('save-btn');
   btn.textContent='Salvando...';btn.disabled=true;
   try{
-    const data={startDate:sd,startHour:sh,endDate:ed,endHour:eh,bookingType,user,lab,phone:phone||null,protein:protein||null,readType:readType||null,plate:plate||null,notes:notes||null,pending:isPending,updatedAt:new Date().toISOString()};
+    const data={equipment:eqId,startDate:sd,startHour:sh,endDate:ed,endHour:eh,bookingType,user,lab,phone:phone||null,protein:eqI.expFields?(protein||null):null,readType:eqI.expFields?(readType||null):null,plate:eqI.expFields?(plate||null):null,uvOff:eqI.uvField?(document.getElementById('bk-uv-off')?.checked||false):null,notes:notes||null,pending:isPending,updatedAt:new Date().toISOString()};
     if(editingId){
       await db.collection('bookings').doc(editingId).update(data);
     }else{
       data.createdAt=new Date().toISOString();
       await db.collection('bookings').add(data);
-      if(bookingType==='experimento'){
+      if(bookingType==='experimento'&&eqId==='varioskan'){
         await incrementUsage();
-        // Add hours to user counter
+      }
+      if(bookingType==='experimento'&&eqI.hourLimit){
         const bUser=users.find(u=>u.name===user);
         if(bUser){
           const newStart=new Date(sd+'T'+pad(sh)+':00');
@@ -977,6 +1069,10 @@ function selFP(el,v){
 }
 
 function populateFilters(){
+  const fe=document.getElementById('f-eq');
+  if(fe&&fe.options.length<=1){
+    EQUIPMENTS.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name;fe.appendChild(o);});
+  }
   const fu=document.getElementById('f-user');
   if(fu.options.length>1)return;
   users.forEach(u=>{const o=document.createElement('option');o.value=u.name;o.textContent=u.name+(u.lab?' ('+u.lab+')':'');fu.appendChild(o);});
@@ -994,7 +1090,9 @@ function renderReservas(){
   const labs=new Set(bookings.map(b=>b.lab).filter(Boolean));
   fl.innerHTML='<option value="">Todos os laboratórios</option>'+[...labs].sort().map(l=>`<option value="${l}"${l===curL?' selected':''}>${l}</option>`).join('');
 
+  const eF=document.getElementById('f-eq')?.value||'';
   let bks=[...bookings].sort((a,b)=>(b.startDate+pad(b.startHour||0)).localeCompare(a.startDate+pad(a.startHour||0)));
+  if(eF)bks=bks.filter(b=>(b.equipment||'varioskan')===eF);
   if(uF)bks=bks.filter(b=>b.user===uF);
   if(lF)bks=bks.filter(b=>b.lab===lF);
   if(sF)bks=bks.filter(b=>JSON.stringify(b).toLowerCase().includes(sF));
@@ -1008,8 +1106,10 @@ function renderReservas(){
     const dur=getDuration(b);
     return`<div class="reserva-item" onclick="openEdit('${b.id}')" style="${b.bookingType==='manutencao'?'border-left:3px solid var(--amber)':''}">
       <div class="ri-top">
-        ${b.bookingType==='manutencao'?'<span class="badge badge-manut">🔧 Manutenção</span>':'<span class="badge badge-exp">🔬 Experimento</span>'}
+        <span class="badge" style="background:${eqInfo(b.equipment||'varioskan').color}22;color:${eqInfo(b.equipment||'varioskan').color};font-weight:600">${eqInfo(b.equipment||'varioskan').short}</span>
+        ${b.bookingType==='manutencao'?'<span class="badge badge-manut">🔧 Manutenção</span>':''}
         ${b.readType?`<span style="font-size:11px;color:var(--text2)">${b.readType}</span>`:''}
+        ${b.uvOff===true?'<span class="badge" style="background:var(--green-light);color:var(--green)">💡 UV ok</span>':(b.uvOff===false?'<span class="badge" style="background:var(--amber-light);color:var(--amber)">💡 UV pendente</span>':'')}
         <span style="font-size:12px;font-weight:600;margin-left:auto">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h → ${fmtBR(b.endDate)} ${pad(b.endHour||0)}h</span>
       </div>
       ${b.protein?`<div style="margin-bottom:3px"><span style="font-size:11px;background:var(--teal-light);color:var(--teal);padding:2px 7px;border-radius:4px">🧪 ${b.protein}</span></div>`:''}
@@ -1063,6 +1163,7 @@ function renderUpcoming(){
   el.innerHTML=bks.map(b=>`
     <div class="reserva-item" onclick="openEdit('${b.id}')">
       <div class="ri-top">
+        <span class="badge" style="background:${eqInfo(b.equipment||'varioskan').color}22;color:${eqInfo(b.equipment||'varioskan').color};font-weight:600">${eqInfo(b.equipment||'varioskan').short}</span>
         <strong style="font-size:12px">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h</strong>
         <span style="font-size:11px;color:var(--text3)">→ ${fmtBR(b.endDate)} ${pad(b.endHour||0)}h</span>
         ${b.readType?`<span class="badge badge-exp">${b.readType}</span>`:''}
@@ -1218,9 +1319,10 @@ async function revokeAccess(uid,name){
 // CSV
 // ═══════════════════════════════════
 function exportCSV(){
-  const rows=[['Data início','Hora início','Data fim','Hora fim','Duração','Tipo','Usuário','Laboratório','Telefone','Tipo de leitura','Placa','Proteína/Amostra','Observações']];
+  const rows=[['Equipamento','Data início','Hora início','Data fim','Hora fim','Duração','Tipo','Usuário','Laboratório','Telefone','Tipo de leitura','Placa','Proteína/Amostra','Luz UV desligada','Observações']];
   [...bookings].sort((a,b)=>a.startDate.localeCompare(b.startDate)).forEach(b=>{
-    rows.push([fmtBR(b.startDate),pad(b.startHour||0)+'h',fmtBR(b.endDate),pad(b.endHour||0)+'h',getDuration(b),b.bookingType==='manutencao'?'Manutenção':'Experimento',b.user||'',b.lab||'',b.phone||'',b.readType||'',b.plate||'',b.protein||'',b.notes||'']);
+    const e=eqInfo(b.equipment||'varioskan');
+    rows.push([e.name,fmtBR(b.startDate),pad(b.startHour||0)+'h',fmtBR(b.endDate),pad(b.endHour||0)+'h',getDuration(b),b.bookingType==='manutencao'?'Manutenção':'Experimento',b.user||'',b.lab||'',b.phone||'',b.readType||'',b.plate||'',b.protein||'',b.uvOff===true?'Sim':(b.uvOff===false?'Não':''),b.notes||'']);
   });
   const csv='\uFEFF'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const a=document.createElement('a');
