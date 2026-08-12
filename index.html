@@ -412,6 +412,13 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
           <input type="text" id="bk-protein" placeholder="ex: MadB, TraI...">
         </div>
       </div>
+      <div class="field" id="room-light-field">
+        <label class="overnight-toggle" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="bk-room-light-off">
+          🌑 Luz da sala DESLIGADA durante o experimento
+        </label>
+        <p style="font-size:11px;color:var(--text3);margin-top:3px">Marque se o experimento exige a sala escura. Isso aparecerá na agenda para todos ficarem cientes.</p>
+      </div>
       <div class="field" id="uv-field" style="display:none">
         <label class="overnight-toggle" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
           <input type="checkbox" id="bk-uv-off">
@@ -907,12 +914,12 @@ function renderTimeline(){
         const cls=b.pending?'bk-pending':b.bookingType==='manutencao'?'bk-manut':'bk-exp';
         const label=b.bookingType==='manutencao'
           ?`🔧 ${b.user.split(' ')[0]}`
-          :`${b.pending?'⏳ ':''}${b.user.split(' ')[0]}${b.lab?` (${b.lab})`:''}`;
+          :`${b.pending?'⏳ ':''}${b.roomLightOff?'🌑 ':''}${b.user.split(' ')[0]}${b.lab?` (${b.lab})`:''}`;
         const heightPx=span*28; // 28px per row
         cellContent+=`<div class="tg-booking-block ${cls}" 
           style="height:${heightPx}px;position:absolute;top:0;left:0;right:0;z-index:2;padding:3px 5px;overflow:hidden;border-radius:3px;cursor:pointer;line-height:1.3;font-size:10px"
           onclick="event.stopPropagation();openEdit('${b.id}')"
-          title="${b.user}${b.lab?' · '+b.lab:''} · ${getDuration(b)}">
+          title="${b.user}${b.lab?' · '+b.lab:''} · ${getDuration(b)}${b.roomLightOff?' · 🌑 LUZ DA SALA DESLIGADA':''}">
           <strong>${label}</strong>
           ${span>1?`<br><span style="opacity:.7">${pad(startH)}h–${pad(endH)}h</span>`:''}
         </div>`;
@@ -1015,6 +1022,7 @@ function openNew(date,hour,endHour){
   document.getElementById('modal-title').textContent='Nova reserva';
   populateBkEquipment(currentEq);
   const uvCb=document.getElementById('bk-uv-off'); if(uvCb) uvCb.checked=false;
+  const rlCb=document.getElementById('bk-room-light-off'); if(rlCb) rlCb.checked=false;
   document.getElementById('del-btn').style.display='none';
   document.getElementById('conflict-alert').style.display='none';
   document.getElementById('bk-notes').value='';
@@ -1043,6 +1051,7 @@ function openEdit(id){
   document.getElementById('modal-title').textContent='Editar reserva';
   populateBkEquipment(b.equipment||'varioskan');
   const uvCb2=document.getElementById('bk-uv-off'); if(uvCb2) uvCb2.checked=!!b.uvOff;
+  const rlCb2=document.getElementById('bk-room-light-off'); if(rlCb2) rlCb2.checked=!!b.roomLightOff;
   document.getElementById('del-btn').style.display='block';
   document.getElementById('conflict-alert').style.display='none';
   document.getElementById('bk-start-date').value=b.startDate;
@@ -1191,7 +1200,7 @@ Deseja continuar?`)){return;}
   btn.textContent='Salvando...';btn.disabled=true;
   const _timeout=(p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Tempo esgotado. Verifique a conexão.')),12000))]);
   try{
-    const data={equipment:eqId,startDate:sd,startHour:sh,endDate:ed,endHour:eh,bookingType,user,lab,phone:phone||null,protein:eqI.expFields?(protein||null):null,readType:eqI.expFields?(readType||null):null,plate:eqI.expFields?(plate||null):null,uvOff:eqI.uvField?(document.getElementById('bk-uv-off')?.checked||false):null,notes:notes||null,pending:isPending,updatedAt:new Date().toISOString()};
+    const data={equipment:eqId,startDate:sd,startHour:sh,endDate:ed,endHour:eh,bookingType,user,lab,phone:phone||null,protein:eqI.expFields?(protein||null):null,readType:eqI.expFields?(readType||null):null,plate:eqI.expFields?(plate||null):null,uvOff:eqI.uvField?(document.getElementById('bk-uv-off')?.checked||false):null,roomLightOff:document.getElementById('bk-room-light-off')?.checked||false,notes:notes||null,pending:isPending,updatedAt:new Date().toISOString()};
     if(editingId){
       await _timeout(db.collection('bookings').doc(editingId).update(data));
     }else{
@@ -1295,6 +1304,7 @@ function renderReservas(){
         <span class="badge" style="background:${eqInfo(b.equipment||'varioskan').color}22;color:${eqInfo(b.equipment||'varioskan').color};font-weight:600">${eqInfo(b.equipment||'varioskan').short}</span>
         ${b.bookingType==='manutencao'?'<span class="badge badge-manut">🔧 Manutenção</span>':''}
         ${b.readType?`<span style="font-size:11px;color:var(--text2)">${b.readType}</span>`:''}
+        ${b.roomLightOff?'<span class="badge" style="background:#2a2a3a;color:#c8c8f0">🌑 Sala escura</span>':''}
         ${b.uvOff===true?'<span class="badge" style="background:var(--green-light);color:var(--green)">💡 UV ok</span>':(b.uvOff===false?'<span class="badge" style="background:var(--amber-light);color:var(--amber)">💡 UV pendente</span>':'')}
         <span style="font-size:12px;font-weight:600;margin-left:auto">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h → ${fmtBR(b.endDate)} ${pad(b.endHour||0)}h</span>
       </div>
@@ -1353,6 +1363,7 @@ function renderUpcoming(){
         <strong style="font-size:12px">${fmtBR(b.startDate)} ${pad(b.startHour||0)}h</strong>
         <span style="font-size:11px;color:var(--text3)">→ ${fmtBR(b.endDate)} ${pad(b.endHour||0)}h</span>
         ${b.readType?`<span class="badge badge-exp">${b.readType}</span>`:''}
+        ${b.roomLightOff?'<span class="badge" style="background:#2a2a3a;color:#c8c8f0">🌑 Sala escura</span>':''}
       </div>
       <div class="ri-info">👤 ${b.user}${b.lab?' · <strong>'+b.lab+'</strong>':''} · ${getDuration(b)}${b.phone?' · 📞'+b.phone:''}</div>
     </div>`).join('');
@@ -1505,10 +1516,10 @@ async function revokeAccess(uid,name){
 // CSV
 // ═══════════════════════════════════
 function exportCSV(){
-  const rows=[['Equipamento','Data início','Hora início','Data fim','Hora fim','Duração','Tipo','Usuário','Laboratório','Telefone','Tipo de leitura','Placa','Proteína/Amostra','Luz UV desligada','Observações']];
+  const rows=[['Equipamento','Data início','Hora início','Data fim','Hora fim','Duração','Tipo','Usuário','Laboratório','Telefone','Tipo de leitura','Placa','Proteína/Amostra','Luz UV desligada','Luz da sala desligada','Observações']];
   [...bookings].sort((a,b)=>a.startDate.localeCompare(b.startDate)).forEach(b=>{
     const e=eqInfo(b.equipment||'varioskan');
-    rows.push([e.name,fmtBR(b.startDate),pad(b.startHour||0)+'h',fmtBR(b.endDate),pad(b.endHour||0)+'h',getDuration(b),b.bookingType==='manutencao'?'Manutenção':'Experimento',b.user||'',b.lab||'',b.phone||'',b.readType||'',b.plate||'',b.protein||'',b.uvOff===true?'Sim':(b.uvOff===false?'Não':''),b.notes||'']);
+    rows.push([e.name,fmtBR(b.startDate),pad(b.startHour||0)+'h',fmtBR(b.endDate),pad(b.endHour||0)+'h',getDuration(b),b.bookingType==='manutencao'?'Manutenção':'Experimento',b.user||'',b.lab||'',b.phone||'',b.readType||'',b.plate||'',b.protein||'',b.uvOff===true?'Sim':(b.uvOff===false?'Não':''),b.roomLightOff?'Sim':'',b.notes||'']);
   });
   const csv='\uFEFF'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const a=document.createElement('a');
